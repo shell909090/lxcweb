@@ -1,0 +1,39 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+  <head>
+    <title>home</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="author" content="shell">
+  </head>
+
+  <body>
+    <table>
+      <tr>
+	<td>name</td><td>status</td><td>processes</td>
+	<td>memory</td><td>cpu time</td><td>actions</td>
+      </tr>
+      % for name, info in infos.iteritems():
+      <tr>
+	<td><a href="/info/${name}">${name}</a></td>
+	<td>
+	% if info['state'] == 'RUNNING':
+	  <a href="/shutdown/${name}">${info['state']}</a>
+	  <a href="/stop/${name}">stop</a>
+	  <a href="/reboot/${name}">reboot</a>
+	% elif info['state'] == 'STOPPED':
+	  <a href="/start/${name}">${info['state']}</a>
+	% endif
+	</td>
+	<td>${info.get('processes')}</td>
+	<td>${info.get('memstr')}</td><td>${info.get('cpu_usage')}</td>
+	<td>
+	% if info['state'] == 'STOPPED':
+	  <a href="/clone/${name}">clone</a>
+	  <a href="/destory/${name}">destory</a>
+	% endif
+	</td>
+      </tr>
+      % endfor
+    </table>
+  </body>
+</html>

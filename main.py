@@ -6,7 +6,7 @@
 '''
 import os, sys, web, logging
 from os import path
-# from web.contrib.template import render_mako
+from web.contrib.template import render_mako
 
 def initlog(lv, logfile=None):
     rootlog = logging.getLogger()
@@ -24,20 +24,12 @@ DEBUG = not path.isfile('RELEASE')
 web.config.debug = DEBUG
 web.config.rootdir = path.dirname(__file__)
 # web.config.db = web.database(dbn='postgres', db='hosts')
-# web.config.render = render_mako(
-#     directories = ['templates'],  imports = ['import web'],
-#     default_filters = ['decode.utf8'], filesystem_checks = DEBUG,
-#     module_directory = None if DEBUG else '/tmp/mako_modules',
-#     input_encoding = 'utf-8', output_encoding = 'utf-8')
+web.config.render = render_mako(
+    directories = ['templates'],  imports = ['import web'],
+    default_filters = ['decode.utf8'], filesystem_checks = DEBUG,
+    module_directory = None if DEBUG else '/tmp/mako_modules',
+    input_encoding = 'utf-8', output_encoding = 'utf-8')
 
-# urls = (
-#     '/openid/', 'actions.webgid.host',
-#     '/ticket/', 'actions.ticket.ticket',
-#     '/timezone/', 'actions.timezone.timezone',
-#     '/segment/', 'actions.segtxt.segtxt',
-#     '/txtimg', txtimg.app,
-#     '/pycode', pycode.app,
-# )
 import lxcweb
 app = web.application(lxcweb.urls)
 
