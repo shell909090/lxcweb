@@ -7,55 +7,30 @@
   </head>
 
   <body>
+    % if info['state'] == 'RUNNING':
+      <a href="/stop/${nm}">stop</a>
+      <a href="/reboot/${nm}">reboot</a>
+      <a href="/ps/${nm}">ps</a>
+    % elif info['state'] == 'STOPPED':
+      <a href="/clone/${nm}">clone</a>
+      <a href="/clone/${nm}?mode=fast">fast clone</a>
+      <a href="/destory/${nm}">destory</a>
+    % endif
+    % if info['state'] == 'RUNNING':
     <table>
       <tr>
 	<td>status</td><td>pid</td>
 	<td>cpu user time</td><td>cpu system time</td>
-	<td>processes</td><td>memory</td><td>cpu time</td>
+	<td>memory</td><td>cpu time</td>
 	<td>cache</td><td>total rss</td><td>rss</td>
       </tr>
       <tr>
 	<td>${info['state']}</td><td>${info['pid']}</td>
-	<td>${info['user']}</td><td>${info['system']}</td>
-	<td>${info['processes']}</td><td>${info['memstr']}</td><td>${info['cpu_usage']}</td>
-	<td>${rs(info['cache'])}</td><td>${rs(info['total_rss'])}</td><td>${rs(info['rss'])}</td>
+	<td>${info.get('user')}</td><td>${info.get('system')}</td>
+	<td>${info.get('memstr')}</td><td>${info['cpu_usage']}</td>
+	<td>${rs(info.get('cache'))}</td><td>${rs(info.get('total_rss'))}</td><td>${rs(info.get('rss'))}</td>
       </tr>
     </table>
-    <table>
-      <tr>
-	<td>source</td><td>target</td><td>filesystem</td><td>options</td>
-      </tr>
-      % for r in fstab:
-      <tr>
-	<td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td>
-      </tr>
-      % endfor
-    </table>
-    <table>
-      <tr>
-	<td>user</td><td>pid</td><td>%cpu</td><td>%mem</td><td>vsz</td><td>rss</td>
-	<td>tty</td><td>stat</td><td>start time</td><td>time</td><td>cmdline</td>
-      </tr>
-      % for p in ps:
-      <tr>
-	<td>${p[0]}</td>
-	<td>${p[1]}</td>
-	<td>${p[2]}</td>
-	<td>${p[3]}</td>
-	<td>${p[4]}</td>
-	<td>${p[5]}</td>
-	<td>${p[6]}</td>
-	<td>${p[7]}</td>
-	<td>${p[8]}</td>
-	<td>${p[9]}</td>
-	<td>${p[10]}</td>
-      </tr>
-      % endfor
-    </table>
-    % for name, vs in config.iteritems():
-      % for v in vs:
-        <ul>${name}=${v}</ul>
-      % endfor
-    % endfor
+    % endif
   </body>
 </html>

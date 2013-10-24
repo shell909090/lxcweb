@@ -1,0 +1,30 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+  <head>
+    <title>home</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="author" content="shell">
+  </head>
+
+  <body>
+    processes: ${len(ps)}
+    <table>
+      <tr>
+	<td>user</td><td>pid</td><td>%cpu</td><td>%mem</td>
+	<td>vsz</td><td>rss</td><td>stat</td><td>cmdline</td>
+      </tr>
+      % for p in ps:
+      <tr>
+	<td>${p[0]}</td>
+	<td>${p[1]}</td>
+	<td>${p[2]}</td>
+	<td>${p[3]}</td>
+	<td>${p[4]}</td>
+	<td>${p[5]}</td>
+	<td>${p[7]}</td>
+	<td>${p[10]}</td>
+      </tr>
+      % endfor
+    </table>
+  </body>
+</html>

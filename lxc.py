@@ -4,19 +4,20 @@
 @date: 2013-10-23
 @author: shell.xu
 '''
-import os, sys, logging
+import re, os, sys, logging
 import subprocess
 from os import path
 
 global_configfile = '/etc/lxc/lxc.conf'
+default_lxcpath = '/var/lib/lxc'
 
-def readable_size(i):
-    F = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB', 'NMB']
-    j, i = 0, int(i)
-    while i > 1024:
-        i >>= 10
-        j += 1
-    return '%d %s' % (i, F[j])
+def check_call(name, cmd):
+    cmd = ['sudo', 'lxc-attach', '-n', name, '--'] + cmd
+    return subprocess.check_call(cmd)
+
+def check_output(name, cmd):
+    cmd = ['sudo', 'lxc-attach', '-n', name, '--'] + cmd
+    return subprocess.check_output(cmd)
 
 def read_config(filepath, spliter='='):
     cfg = {}
@@ -39,8 +40,8 @@ def simple_config(cfg):
     return dict((k, v[-1]) for k, v in cfg.iteritems())
 
 def global_config():
-    try: cfg = read_config(global_configfile)
-    except IOError: return {'lxcpath': ['/var/lib/lxc',]}
+    try: return read_config(global_configfile)
+    except IOError: return {'lxcpath': [default_lxcpath,]}
 
 def container_config(name):
     cfg = global_config()
@@ -78,8 +79,12 @@ def container_net(cfg):
         return simple_config(cfg)
     else: raise Exception('not support yet')
 
-def clone(origin, name):
-    cmd = ['sudo', 'lxc-clone', '-o', origin, '-n', name]
+# methods
+
+def clone(origin, name, fast=False):
+    if fast:
+        cmd = ['sudo', './lxc-clone-aufs', '-o', origin, '-n', name]
+    else: cmd = ['sudo', 'lxc-clone', '-o', origin, '-n', name]
     return subprocess.check_call(cmd)
 
 def create(template, name):
@@ -103,19 +108,23 @@ def info(name):
 def status(name):
     rslt = {}
     try:
-        with open('/sys/fs/cgroup/lxc/%s/memory.usage_in_bytes' % name, 'r') as fi:
-            rslt['memory'] =  int(fi.read().strip())
-            rslt['memstr'] = readable_size(rslt['memory'])
         rslt.update(
             simple_config(
-                read_config('/sys/fs/cgroup/lxc/%s/cpuacct.stat' % name, spliter=' ')))
+                read_config('/sys/fs/cgroup/lxc/%s/cpuacct.stat' % name,
+                            spliter=' ')))
         with open('/sys/fs/cgroup/lxc/%s/cpuacct.usage' % name, 'r') as fi:
             rslt['cpu.usage'] = int(fi.read().strip())
             rslt['cpu_usage'] = rslt['cpu.usage'] / 1000000000
+    except IOError: pass
+    try:
+        with open('/sys/fs/cgroup/lxc/%s/memory.usage_in_bytes' % name, 'r') as fi:
+            rslt['memory'] =  int(fi.read().strip())
         rslt.update(
             simple_config(
-                read_config('/sys/fs/cgroup/lxc/%s/memory.stat' % name, spliter=' ')))
+                read_config('/sys/fs/cgroup/lxc/%s/memory.stat' % name,
+                            spliter=' ')))
     except IOError: pass
+    rslt['ipaddr'] = list(ipaddr(name))
     return rslt
 
 def ps(name):
@@ -149,21 +158,19 @@ def shutdown(name, wait=True, reboot=False):
 
 # lxc-wait
 
+re_inet = re.compile('inet (\S*).*')
+def ipaddr(name, dev=''):
+    cmd = ['ip', 'addr', 'show']
+    if dev: cmd.append(dev)
+    for line in check_output(name, cmd).splitlines():
+        line = line.strip()
+        m = re_inet.match(line)
+        if not m: continue
+        i = m.group(1).split('/')
+        if i[0] in ('127.0.0.1',): continue
+        yield i[0], int(i[1])
+
 def main():
-    cfg = container_config(sys.argv[1])
-    print 'rootfs:'
-    print '\t', cfg['lxc.rootfs'][-1]
-    print 'network:'
-    print '\t', container_net(cfg)
-    print 'fstab:'
-    for r in container_fstab(sys.argv[1]):
-        print '\t', '\t'.join(r)
-    i = info(sys.argv[1])
-    print 'info:'
-    print '\t', i
-    print 'memory:'
-    print '\t', readable_size(i['memory'])
-    print 'processes:'
-    print '\t', len(list(ps(sys.argv[1])))
+    pass
 
 if __name__ == '__main__': main()
