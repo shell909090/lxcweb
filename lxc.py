@@ -110,29 +110,29 @@ def info(name):
                 for line in output.splitlines())
 
 def status(name):
-    rslt = {}
+    rslt, basedir = {}, '/sys/fs/cgroup/lxc/%s/' % name
     try:
         rslt.update(
             simple_config(
-                read_config('/sys/fs/cgroup/lxc/%s/cpuacct.stat' % name,
-                            spliter=' ')))
-        with open('/sys/fs/cgroup/lxc/%s/cpuacct.usage' % name, 'r') as fi:
+                read_config(basedir + 'cpuacct.stat', spliter=' ')))
+        with open(basedir + 'cpuacct.usage', 'r') as fi:
             rslt['cpu.usage'] = int(fi.read().strip())
             rslt['cpu_usage'] = rslt['cpu.usage'] / 1000000000
+        with open(basedir + 'tasks', 'r') as fi:
+            rslt['pids'] = [int(i.strip()) for i in fi.read().split()]
     except IOError: pass
     try:
-        with open('/sys/fs/cgroup/lxc/%s/memory.usage_in_bytes' % name, 'r') as fi:
+        with open(basedir + 'memory.usage_in_bytes', 'r') as fi:
             rslt['memory'] =  int(fi.read().strip())
         rslt.update(
             simple_config(
-                read_config('/sys/fs/cgroup/lxc/%s/memory.stat' % name,
-                            spliter=' ')))
+                read_config(basedir + 'memory.stat', spliter=' ')))
     except IOError: pass
     rslt['ipaddr'] = list(ipaddr(name))
     return rslt
 
 def ps(name):
-    output = subprocess.check_output(['sudo', 'lxc-ps', '-n', name, 'u'])
+    output = subprocess.check_output(['sudo', 'lxc-ps', '-n', name, 'axu'])
     for line in output.splitlines():
         if line.startswith('CONTAINER'): continue
         i = line.strip().split()

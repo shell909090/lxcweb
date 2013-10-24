@@ -9,7 +9,7 @@
   <body>
     <table>
       <tr>
-	<td>name</td><td>status</td>
+	<td>name</td><td>status</td><td>processes</td>
 	<td>memory</td><td>cpu time</td>
 	<td>network device</td><td>ipaddr</td><td>rootfs</td>
 	<td>config</td>
@@ -23,6 +23,13 @@
 	% elif info['state'] == 'STOPPED':
 	  <a href="/start/${name}">${info['state']}</a>
 	% endif
+	</td>
+	<td>
+	  % if info['state'] == 'RUNNING':
+	    <a href="/ps/${name}">${len(info['pids'])}</a>
+	  % else:
+	    0
+	  % endif
 	</td>
 	<td>${rs(info.get('memory'))}</td>
 	<td>${info.get('cpu_usage')}</td>
