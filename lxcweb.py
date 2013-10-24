@@ -12,13 +12,16 @@ rander = web.config.render
 
 # TODO: authorized
 
-def readable_size(i):
+def readable_size(i, tgt=None):
     F = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB', 'NMB']
+    if tgt: tgt = F.index(tgt)
+    if tgt == -1: tgt = None
     if i is None: return 'no size'
     j, i = 0, int(i)
     while i > 1024:
         i >>= 10
         j += 1
+        if tgt and j == tgt: break
     return '%d %s' % (i, F[j])
 
 def network_set(cfg):
@@ -50,6 +53,7 @@ class Info(object):
         ps, info = [], lxc.info(name)
         if info['state'] == 'RUNNING':
             info.update(lxc.status(name))
+        info['diskusage'] = lxc.df(name) / 1024
         return rander.info(nm=name, info=info, rs=readable_size)
 
 class Config(object):
@@ -138,28 +142,3 @@ class Attach(object):
         cmd = web.data()
         web.header('Content-Type', 'text/plain')
         return lxc.check_output(name, cmd)
-
-urls = (
-    # info actions
-    '/', Home,
-    '/info/(.*)', Info,
-    '/config/(.*)', Config,
-    '/ps/(.*)', Ps,
-    '/list', List,
-    '/cfg/(.*)', Cfg,
-    '/mount/(.*)', Mount,
-
-    # image actions
-    '/clone/(.*)/(.*)', Clone,
-    '/create/(.*)/(.*)', Create,
-    '/destory/(.*)', Destory,
-    
-    # container actions
-    '/start/(.*)', Start,
-    '/stop/(.*)', Stop,
-    '/shutdown/(.*)', Shutdown,
-    '/reboot/(.*)', Reboot,
-
-    # runtime actions
-    '/attach/(.*)', Attach,
-)

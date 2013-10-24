@@ -20,15 +20,20 @@
     <table>
       <tr>
 	<td>status</td><td>pid</td>
-	<td>cpu user time</td><td>cpu system time</td>
-	<td>memory</td><td>cpu time</td>
-	<td>cache</td><td>total rss</td><td>rss</td>
+	<td>cpu time</td><td>cpu user time</td><td>cpu system time</td>
+	<td>disk usage</td>
+	<td>memory</td><td>cache</td><td>total rss</td><td>rss</td>
       </tr>
       <tr>
 	<td>${info['state']}</td><td>${info['pid']}</td>
-	<td>${info.get('user')}</td><td>${info.get('system')}</td>
-	<td>${info.get('memstr')}</td><td>${info['cpu_usage']}</td>
-	<td>${rs(info.get('cache'))}</td><td>${rs(info.get('total_rss'))}</td><td>${rs(info.get('rss'))}</td>
+	<td>${info['cpu_usage']}</td>
+	<td>${info.get('user')}</td>
+	<td>${info.get('system')}</td>
+	<td>${info.get('diskusage')} MB</td>
+	<td>${rs(info.get('memory'), 'MB')}</td>
+	<td>${rs(info.get('cache'))}</td>
+	<td>${rs(info.get('total_rss'))}</td>
+	<td>${rs(info.get('rss'))}</td>
       </tr>
     </table>
     % endif

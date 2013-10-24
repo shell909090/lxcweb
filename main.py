@@ -31,6 +31,30 @@ web.config.render = render_mako(
     input_encoding = 'utf-8', output_encoding = 'utf-8')
 
 import lxcweb
+urls = (
+    # info actions
+    '/', lxcweb.Home,
+    '/info/(.*)', lxcweb.Info,
+    '/config/(.*)', lxcweb.Config,
+    '/ps/(.*)', lxcweb.Ps,
+    '/list', lxcweb.List,
+    '/cfg/(.*)', lxcweb.Cfg,
+    '/mount/(.*)', lxcweb.Mount,
+
+    # image actions
+    '/clone/(.*)/(.*)', lxcweb.Clone,
+    '/create/(.*)/(.*)', lxcweb.Create,
+    '/destory/(.*)', lxcweb.Destory,
+    
+    # container actions
+    '/start/(.*)', lxcweb.Start,
+    '/stop/(.*)', lxcweb.Stop,
+    '/shutdown/(.*)', lxcweb.Shutdown,
+    '/reboot/(.*)', lxcweb.Reboot,
+
+    # runtime actions
+    '/attach/(.*)', lxcweb.Attach,
+)
 app = web.application(lxcweb.urls)
 
 # if web.config.get('sesssion') is None:

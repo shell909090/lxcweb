@@ -19,6 +19,8 @@ def check_output(name, cmd):
     cmd = ['sudo', 'lxc-attach', '-n', name, '--'] + cmd
     return subprocess.check_output(cmd)
 
+# config methods
+
 def read_config(filepath, spliter='='):
     cfg = {}
     with open(filepath, 'r') as fi:
@@ -79,7 +81,7 @@ def container_net(cfg):
         return simple_config(cfg)
     else: raise Exception('not support yet')
 
-# methods
+# image methods
 
 def clone(origin, name, fast=False):
     if fast:
@@ -94,6 +96,8 @@ def create(template, name):
 def destroy(name):
     cmd = ['sudo', 'lxc-destroy', '-n', name]
     return subprocess.check_call(cmd)
+
+# info methods
 
 def ls():
     output = subprocess.check_output(['lxc-ls',])
@@ -134,6 +138,13 @@ def ps(name):
         i = line.strip().split()
         i[11] = ' '.join(i[11:])
         yield i[1:12]
+
+def df(name):
+    cfg = container_config(name)
+    output = subprocess.check_output(['sudo', 'du', '-sk', cfg['lxc.rootfs'][-1]])
+    return int(output.split()[0].strip())
+
+# container methods
 
 def start(name, daemon=True):
     cmd = ['sudo', 'lxc-start', '-n', name]
