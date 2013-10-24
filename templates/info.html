@@ -21,7 +21,7 @@
 	<td>status</td><td>pid</td>
 	<td>cpu time</td><td>cpu user time</td><td>cpu system time</td>
 	<td>disk usage</td>
-	<td>memory</td><td>cache</td><td>total rss</td><td>rss</td>
+	<td>memory</td><td>cache</td><td>rss</td>
       </tr>
       <tr>
 	<td>${info['state']}</td><td>${info['pid']}</td>
@@ -31,7 +31,6 @@
 	<td>${info.get('diskusage')} MB</td>
 	<td>${rs(info.get('memory'), 'MB')}</td>
 	<td>${rs(info.get('cache'))}</td>
-	<td>${rs(info.get('total_rss'))}</td>
 	<td>${rs(info.get('rss'))}</td>
       </tr>
     </table>
