@@ -55,7 +55,7 @@ urls = (
     # runtime actions
     '/attach/(.*)', lxcweb.Attach,
 )
-app = web.application(lxcweb.urls)
+app = web.application(urls)
 
 # if web.config.get('sesssion') is None:
 #     web.config.session = web.session.Session(
