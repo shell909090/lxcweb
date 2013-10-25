@@ -7,6 +7,16 @@
   </head>
 
   <body>
+    % if aufs:
+    aufs:
+    <table>
+      <tr><td>attr</td><td>path</td></tr>
+      % for i in aufs:
+      <tr><td>${i[1]}</td><td>${i[0]}</td></tr>
+      % endfor
+    </table>
+    % endif
+    fstab:
     <table>
       <tr>
 	<td>source</td><td>target</td><td>filesystem</td><td>options</td>
@@ -17,10 +27,12 @@
       </tr>
       % endfor
     </table>
-    % for name, vs in cfg.iteritems():
+    <ul>
+    % for name, vs in sorted(cfg.iteritems(), key=lambda i: i[0]):
       % for v in vs:
-        <ul>${name}=${v}</ul>
+        <li>${name}=${v}</li>
       % endfor
     % endfor
+    </ul>
   </body>
 </html>

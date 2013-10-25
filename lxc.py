@@ -72,21 +72,20 @@ def container_fstab(name):
         rslt.append(line.split()[:4])
     return rslt
 
-def container_net(cfg):
-    cfg = sub_config(cfg, 'lxc.network')
-    type = cfg.get('type', ['empty',])[-1]
-    if type == 'empty':
-        return 'no network'
-    elif type == 'veth':
-        return simple_config(cfg)
-    else: raise Exception('not support yet')
+def aufs_stack(fstab):
+    i = fstab[0]
+    if i[1] != '/' or i[2] != 'aufs': return
+    for o in i[3].split(','):
+        if not o.startswith('br='): continue
+        for p in o[3:].split(':'):
+            if '=' in p:
+                yield p.split('=', 1)
+            else: p, 'rw'
 
 # image methods
 
 def clone(origin, name, fast=False):
-    if fast:
-        cmd = ['sudo', './lxc-clone-aufs', '-o', origin, '-n', name]
-    else: cmd = ['sudo', 'lxc-clone', '-o', origin, '-n', name]
+    cmd = ['sudo', 'lxc-clone' + '-aufs' if aufs else '', '-o', origin, '-n', name]
     return subprocess.check_call(cmd)
 
 def create(template, name):
@@ -96,6 +95,15 @@ def create(template, name):
 def destroy(name):
     cmd = ['sudo', 'lxc-destroy', '-n', name]
     return subprocess.check_call(cmd)
+
+def merge(name):
+    cfg = container_config(name)
+    rootfs = cfg['lxc.rootfs'][-1]
+    fstab = container_fstab(name)
+    aufs = list(aufs_stack(fstab))
+    for i in aufs: subprocess.check_call(['rsync', '-Hax', i[0], rootfs])
+    # remove aufs in fstab
+    # remove rw?
 
 # info methods
 
@@ -109,7 +117,7 @@ def info(name):
     return dict([i.strip() for i in line.split(':', 1)]
                 for line in output.splitlines())
 
-def status(name):
+def cgroupinfo(name):
     rslt, basedir = {}, '/sys/fs/cgroup/lxc/%s/' % name
     try:
         rslt.update(
@@ -118,7 +126,7 @@ def status(name):
         with open(basedir + 'cpuacct.usage', 'r') as fi:
             rslt['cpu.usage'] = int(fi.read().strip())
             rslt['cpu_usage'] = rslt['cpu.usage'] / 1000000000
-        with open(basedir + 'tasks', 'r') as fi:
+        with open(basedir + 'cgroup.procs', 'r') as fi:
             rslt['pids'] = [int(i.strip()) for i in fi.read().split()]
     except IOError: pass
     try:
@@ -128,7 +136,6 @@ def status(name):
             simple_config(
                 read_config(basedir + 'memory.stat', spliter=' ')))
     except IOError: pass
-    rslt['ipaddr'] = list(ipaddr(name))
     return rslt
 
 def ps(name):
@@ -139,9 +146,16 @@ def ps(name):
         i[11] = ' '.join(i[11:])
         yield i[1:12]
 
-def df(name):
-    cfg = container_config(name)
-    output = subprocess.check_output(['sudo', 'du', '-sk', cfg['lxc.rootfs'][-1]])
+def df(name, all=False):
+    if all:
+        cfg = global_config()
+        if not path.isdir(path.join(cfg['lxcpath'][-1], name)):
+            raise Exception('invaild container %s' % name)
+        p = path.join(cfg['lxcpath'][-1], name)
+    else:
+        cfg = container_config(name)
+        p = cfg['lxc.rootfs'][-1]
+    output = subprocess.check_output(['sudo', 'du', '-sk', p])
     return int(output.split()[0].strip())
 
 # container methods

@@ -7,33 +7,36 @@
   </head>
 
   <body>
+    <input type="text" name="container_name"/>
     % if info['state'] == 'RUNNING':
       <a href="/stop/${nm}">stop</a>
       <a href="/reboot/${nm}">reboot</a>
     % elif info['state'] == 'STOPPED':
-      <a href="/clone/${nm}">clone</a>
-      <a href="/clone/${nm}?mode=fast">fast clone</a>
-      <a href="/destory/${nm}">destory</a>
+      <a href="/clone/${nm}/">clone</a>
+      <a href="/merge/${nm}">merge</a>
     % endif
-    % if info['state'] == 'RUNNING':
+      <a href="/clone/${nm}/?mode=fast">fast clone</a>
+      <a href="/destroy/${nm}">destroy</a>
     <table>
       <tr>
-	<td>status</td><td>pid</td>
-	<td>cpu time</td><td>cpu user time</td><td>cpu system time</td>
-	<td>disk usage</td>
+	<td>status</td><td>pid</td><td>disk usage</td>
+	% if info['state'] == 'RUNNING':
+	<td>cpu</td><td>user</td><td>system</td>
 	<td>memory</td><td>cache</td><td>rss</td>
+	% endif
       </tr>
       <tr>
 	<td>${info['state']}</td><td>${info['pid']}</td>
+	<td>${info.get('diskusage')} MB</td>
+	% if info['state'] == 'RUNNING':
 	<td>${info['cpu_usage']}</td>
 	<td>${info.get('user')}</td>
 	<td>${info.get('system')}</td>
-	<td>${info.get('diskusage')} MB</td>
 	<td>${rs(info.get('memory'), 'MB')}</td>
 	<td>${rs(info.get('cache'))}</td>
 	<td>${rs(info.get('rss'))}</td>
+	% endif
       </tr>
     </table>
-    % endif
   </body>
 </html>

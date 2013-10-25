@@ -12,11 +12,22 @@ rander = web.config.render
 
 # TODO: authorized
 
+def httperr(msg):
+    raise web.InternalError(json.dumps({'msg': msg}))
+
+def state_check(name, st, exist=True):
+    if exist and name not in list(lxc.ls()):
+        httperr('%s not exist' % name)
+    info = lxc.info(name)
+    if st and info['state'] != st:
+        httperr('%s not %s' % (name, st.lower()))
+    return info
+
 def readable_size(i, tgt=None):
     F = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB', 'NMB']
+    if i is None: return None
     if tgt: tgt = F.index(tgt)
     if tgt == -1: tgt = None
-    if i is None: return 'no size'
     j, i = 0, int(i)
     while i > 1024:
         i >>= 10
@@ -24,18 +35,12 @@ def readable_size(i, tgt=None):
         if tgt and j == tgt: break
     return '%d %s' % (i, F[j])
 
-def network_set(cfg):
-    cfg = lxc.sub_config(cfg, 'lxc.network')
-    return '%s(%s)' % (cfg['type'][-1], cfg['link'][-1])
-
 def fullinfo():
     for v in lxc.ls():
         info = lxc.info(v)
         if info['state'] == 'RUNNING':
-            info.update(lxc.status(v))
-        cfg = lxc.container_config(v)
-        info['netset'] = network_set(cfg)
-        info.update(cfg)
+            info.update(lxc.cgroupinfo(v))
+            info['ipaddr'] = list(lxc.ipaddr(v))
         yield v, info
 
 # info actions
@@ -52,25 +57,25 @@ class Info(object):
     def GET(self, name):
         ps, info = [], lxc.info(name)
         if info['state'] == 'RUNNING':
-            info.update(lxc.status(name))
-        info['diskusage'] = lxc.df(name) / 1024
+            info.update(lxc.cgroupinfo(name))
+        info['diskusage'] = lxc.df(name, True) / 1024
         return rander.info(nm=name, info=info, rs=readable_size)
+
+class Ps(object):
+    def GET(self, name):
+        info = state_check(name, 'RUNNING')
+        return rander.ps(nm=name, ps=list(lxc.ps(name)))
 
 class Config(object):
     def GET(self, name):
         cfg = lxc.container_config(name)
         fstab = lxc.container_fstab(name)
-        return rander.config(nm=name, cfg=cfg, fstab=fstab)
+        aufs = list(lxc.aufs_stack(fstab))
+        return rander.config(nm=name, cfg=cfg, fstab=fstab, aufs=aufs)
 
 class Cfg(object):
     def GET(self, name):
         return json.dumps(lxc.container_config(name))
-
-class Ps(object):
-    def GET(self, name):
-        info = lxc.info(name)
-        if info['state'] != 'RUNNING': return 'status not right'
-        return rander.ps(nm=name, ps=list(lxc.ps(name)))
 
 class Mount(object):
     def GET(self, name):
@@ -80,58 +85,61 @@ class Mount(object):
 
 class Clone(object):
     def GET(self, origin, name):
-        lxc.clone(origin, name)
+        form = web.input()
+        fast = form.get('mode').lower() == 'fast'
+        if name in list(lxc.ls()):
+            httperr('%s exist' % name)
+        if origin not in list(lxc.ls()):
+            httperr('%s not exist' % origin)
+        lxc.clone(origin, name, fast)
+        if form.get('run'): lxc.start(name)
         return web.seeother('/')
 
 class Create(object):
-    def GET(self, origin, name):
-        lxc.Create(origin, name)
+    def GET(self, name):
+        form = web.input()
+        template = form.get('template') or 'debian'
+        if name in list(lxc.ls()):
+            httperr('%s exist' % name)
+        lxc.Create(template, name)
         return web.seeother('/')
 
-class Destory(object):
+class Destroy(object):
     def GET(self, name):
-        lxc.Destory(name)
+        info = state_check(name, None)
+        if info['state'] == 'RUNNING': lxc.stop(name)
+        lxc.destroy(name)
+        return web.seeother('/')
+
+class Merge(object):
+    def GET(self, name):
+        state_check(name, 'RUNNING')
+        lxc.merge(name)
         return web.seeother('/')
 
 # container actions
 
 class Start(object):
     def GET(self, name):
-        info = dict((v, lxc.info(v)) for v in lxc.ls())
-        if name not in info:
-            return json.dumps({'msg': 'invaild name %s' % name})
-        if info[name]['state'] != "STOPPED":
-            return json.dumps({'msg': '%s not stopped' % name})
+        state_check(name, 'STOPPED')
         lxc.start(name)
         return web.seeother('/')
 
 class Stop(object):
     def GET(self, name):
-        info = dict((v, lxc.info(v)) for v in lxc.ls())
-        if name not in info:
-            return json.dumps({'msg': 'invaild name %s' % name})
-        if info[name]['state'] != "RUNNING":
-            return json.dumps({'msg': '%s not running' % name})
+        state_check(name, 'RUNNING')
         lxc.stop(name)
         return web.seeother('/')
 
 class Shutdown(object):
     def GET(self, name):
-        info = dict((v, lxc.info(v)) for v in lxc.ls())
-        if name not in info:
-            return json.dumps({'msg': 'invaild name %s' % name})
-        if info[name]['state'] != "RUNNING":
-            return json.dumps({'msg': '%s not running' % name})
+        state_check(name, 'RUNNING')
         lxc.shutdown(name)
         return web.seeother('/')
 
 class Reboot(object):
     def GET(self, name):
-        info = dict((v, lxc.info(v)) for v in lxc.ls())
-        if name not in info:
-            return json.dumps({'msg': 'invaild name %s' % name})
-        if info[name]['state'] != "RUNNING":
-            return json.dumps({'msg': '%s not running' % name})
+        state_check(name, 'RUNNING')
         lxc.shutdown(name, reboot=True)
         return web.seeother('/')
 
