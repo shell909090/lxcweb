@@ -74,7 +74,7 @@ def container_fstab(name):
 
 def aufs_stack(fstab):
     i = fstab[0]
-    if i[1] != '/' or i[2] != 'aufs': return
+    if i[1].strip('/') or i[2] != 'aufs': return
     for o in i[3].split(','):
         if not o.startswith('br='): continue
         for p in o[3:].split(':'):
@@ -85,7 +85,8 @@ def aufs_stack(fstab):
 # image methods
 
 def clone(origin, name, fast=False):
-    cmd = ['sudo', 'lxc-clone' + '-aufs' if aufs else '', '-o', origin, '-n', name]
+    if fast: cmd = ['sudo', './lxc-clone-aufs', '-o', origin, '-n', name]
+    else: cmd = ['sudo', 'lxc-clone', '-o', origin, '-n', name]
     return subprocess.check_call(cmd)
 
 def create(template, name):
@@ -108,7 +109,7 @@ def merge(name):
 # info methods
 
 def ls():
-    output = subprocess.check_output(['lxc-ls',])
+    output = subprocess.check_output(['sudo', 'lxc-ls',])
     for m in output.split():
         yield m
 
@@ -149,8 +150,6 @@ def ps(name):
 def df(name, all=False):
     if all:
         cfg = global_config()
-        if not path.isdir(path.join(cfg['lxcpath'][-1], name)):
-            raise Exception('invaild container %s' % name)
         p = path.join(cfg['lxcpath'][-1], name)
     else:
         cfg = container_config(name)

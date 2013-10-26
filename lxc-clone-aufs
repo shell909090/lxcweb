@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 #
 # lxc: linux Container library
@@ -184,7 +184,7 @@ echo "Tweaking configuration"
 cp $lxc_path/$lxc_orig/config $lxc_path/$lxc_new/config
 sed -i "s/lxc.utsname.*/lxc.utsname = $hostname/" $lxc_path/$lxc_new/config
 
-grep "lxc.mount[[:space:]]" $lxc_path/$lxc_new/config >/dev/null 2>&1 && { sed -i "s@lxc.mount[[:space:]]=.*@lxc.mount\t= $lxc_path/$lxc_new/fstab@" $lxc_path/$lxc_new/config; }
+grep "lxc.mount[[:space:]]" $lxc_path/$lxc_new/config >/dev/null 2>&1 && { sed -i "s@lxc.mount[[:space:]]*=.*@lxc.mount\t= $lxc_path/$lxc_new/fstab@" $lxc_path/$lxc_new/config; }
 
 if [ -e  $lxc_path/$lxc_orig/fstab ];then
     cp $lxc_path/$lxc_orig/fstab $lxc_path/$lxc_new/fstab

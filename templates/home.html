@@ -1,53 +1,64 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
-  <head>
+    <html>
+    <head>
     <title>home</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <meta name="author" content="shell">
+    <script type="text/javascript" src="http://code.jquery.com/jquery-1.5.2.min.js"></script>
+    <script>
+    function readable_size(s){
+	if (! s) {
+	    return "--"
+	}
+	s = s / 1024 / 1024;
+	return s.toFixed(0) + " MB"
+    }
+    $(document).ready(function(){
+	$.ajax({
+	    url: '/list.json',
+	    cache: false,
+	    dataType: "json",
+	    success: function(data){
+		$.each(data, function(name, item){
+		    newtr = "<tr>";
+		    newtr += "<td><a href=\"/info/" + name + "\">" + name + "</a></td>";
+		    if (item["state"] == "RUNNING") {
+			newtr += "<td><a href=\"/shutdown/" + name + "\">" + item["state"] + "</a></td>";
+			newtr += "<td><a href=\"/ps/" + name + "\">" + item["pids"].length + "</a></td>";
+			newtr += "<td>" + readable_size(item["cache"]) + "</td>";
+			newtr += "<td>" + readable_size(item["rss"]) + "</td>";
+			newtr += "<td>" + item["cpu_usage"] + "</td>";
+			$.each(item["ipaddr"], function(i, ipaddr){
+			    newtr += "<td>" + ipaddr[0] + "/" + ipaddr[1] + "</td>";
+			});
+		    } else {
+			newtr += "<td><a href=\"/start/" + name + "\">" + item["state"] + "</a></td>";
+			newtr += "<td>--</td>";
+			newtr += "<td>--</td>";
+			newtr += "<td>--</td>";
+			newtr += "<td>--</td>";
+			newtr += "<td>--</td>";
+		    }
+		    newtr += "<td><a href=\"/config/" + name + "\">config</a></td>";
+		    newtr += "</tr>";
+		    $("#vmlist tbody").append(newtr);
+		});
+	    },
+	});
+    });
+    </script>
   </head>
 
   <body>
-    <table>
-      <tr>
-	<td>name</td><td>status</td><td>processes</td>
-	<td>cache</td><td>rss</td><td>cpu time</td>
-	<td>ipaddr</td><td>config</td>
-      </tr>
-      % for name, info in infos.iteritems():
-      <tr>
-	<td><a href="/info/${name}">${name}</a></td>
-	<td>
-	% if info['state'] == 'RUNNING':
-	  <a href="/shutdown/${name}">
-	% elif info['state'] == 'STOPPED':
-	  <a href="/start/${name}">
-	% endif
-	  ${info['state']}</a>
-	</td>
-	<td>
-	  % if info['state'] == 'RUNNING':
-	    <a href="/ps/${name}">${len(info['pids'])}</a>
-	  % else:
-	    --
-	  % endif
-	</td>
-	<td>
-	  ${rs(info.get('cache')) or '--'}
-	</td>
-	<td>
-	  ${rs(info.get('rss')) or '--'}
-	</td>
-	<td>${info.get('cpu_usage') or '--'}</td>
-	<td>
-	  % if info.get('ipaddr'):
-	    ${' '.join('%s/%s' % i for i in info.get('ipaddr'))}
-	  % else:
-	    --
-	  % endif
-	</td>
-	<td><a href="/config/${name}">config</a></td>
-      </tr>
-      % endfor
+    <table id="vmlist">
+      <thead>
+	<tr>
+	  <td>name</td><td>status</td><td>processes</td>
+	  <td>cache</td><td>rss</td><td>cpu time</td>
+	  <td>ipaddr</td><td>config</td>
+	</tr>
+      </thead>
+      <tbody></tbody>
     </table>
   </body>
 </html>

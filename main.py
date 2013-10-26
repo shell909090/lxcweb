@@ -30,18 +30,25 @@ web.config.render = render_mako(
     module_directory = None if DEBUG else '/tmp/mako_modules',
     input_encoding = 'utf-8', output_encoding = 'utf-8')
 
+def serve_file(filepath):
+    class ServeFile(object):
+        def GET(self):
+            with open(filepath) as fi:
+                return fi.read()
+    return ServeFile
+
 import lxcweb
 urls = (
     # info actions
-    '/', lxcweb.Home,
+    '/', serve_file('templates/home.html'),
     '/list.json', lxcweb.ListJson,
     '/info/(.*).json', lxcweb.InfoJson,
-    '/info/(.*)', lxcweb.Info,
+    '/info/.*', serve_file('templates/info.html'),
     '/ps/(.*).json', lxcweb.PsJson,
-    '/ps/(.*)', lxcweb.Ps,
+    '/ps/.*', serve_file('templates/ps.html'),
     '/config/(.*).json', lxcweb.ConfigJson,
     '/fstab/(.*).json', lxcweb.FstabJson,
-    '/config/(.*)', lxcweb.Config,
+    '/config/.*', serve_file('templates/config.html'),
 
     # image actions
     '/clone/(.*)/(.*)', lxcweb.Clone,

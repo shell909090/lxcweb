@@ -4,26 +4,44 @@
     <title>home</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <meta name="author" content="shell">
+    <script type="text/javascript" src="http://code.jquery.com/jquery-1.5.2.min.js"></script>
+    <script>
+    $(document).ready(function(){
+	p = $(location).attr('href').split('/');
+	var name = p[p.length - 1];
+	$.ajax({
+	    url: '/ps/' + name + '.json',
+	    cache: false,
+	    dataType: "json",
+	    success: function(data){
+		$.each(data, function(i, v){
+		    newtr = '<tr>';
+		    newtr += '<td>' + v[0] + '</td>';
+		    newtr += '<td>' + v[1] + '</td>';
+		    newtr += '<td>' + v[2] + '</td>';
+		    newtr += '<td>' + v[3] + '</td>';
+		    newtr += '<td>' + v[4] + '</td>';
+		    newtr += '<td>' + v[5] + '</td>';
+		    newtr += '<td>' + v[7] + '</td>';
+		    newtr += '<td><pre>' + v[10] + '</pre></td>';
+		    newtr += '</tr>';
+		    $("#pslist tbody").append(newtr);
+		});
+	    },
+	});
+    });
+    </script>
   </head>
 
   <body>
-    <table>
-      <tr>
-	<td>user</td><td>pid</td><td>%cpu</td><td>%mem</td>
-	<td>vsz</td><td>rss</td><td>stat</td><td>cmdline</td>
-      </tr>
-      % for p in ps:
-      <tr>
-	<td>${p[0]}</td>
-	<td>${p[1]}</td>
-	<td>${p[2]}</td>
-	<td>${p[3]}</td>
-	<td>${p[4]}</td>
-	<td>${p[5]}</td>
-	<td>${p[7]}</td>
-	<td><pre>${p[10]}</pre></td>
-      </tr>
-      % endfor
+    <table id="pslist">
+      <thead>
+	<tr>
+	  <td>user</td><td>pid</td><td>%cpu</td><td>%mem</td>
+	  <td>vsz</td><td>rss</td><td>stat</td><td>cmdline</td>
+	</tr>
+      </thead>
+      <tbody></tbody>
     </table>
   </body>
 </html>

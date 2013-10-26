@@ -47,6 +47,7 @@ def fullinfo():
 
 class ListJson(object):
     def GET(self):
+        web.header("Content-Type", "application/json")
         return json.dumps(dict(fullinfo()))
 
 class Home(object):
@@ -59,7 +60,8 @@ class InfoJson(object):
         if info['state'] == 'RUNNING':
             info.update(lxc.cgroupinfo(name))
         info['diskusage'] = lxc.df(name, True) / 1024
-        return json.dumps(info=info)
+        web.header("Content-Type", "application/json")
+        return json.dumps(info)
 
 class Info(object):
     def GET(self, name):
@@ -72,6 +74,7 @@ class Info(object):
 class PsJson(object):
     def GET(self, name):
         info = state_check(name, 'RUNNING')
+        web.header("Content-Type", "application/json")
         return json.dumps(list(lxc.ps(name)))
 
 class Ps(object):
@@ -81,12 +84,14 @@ class Ps(object):
 
 class ConfigJson(object):
     def GET(self, name):
+        web.header("Content-Type", "application/json")
         return json.dumps(lxc.container_config(name))
 
 class FstabJson(object):
     def GET(self, name):
-        return json.dumps({'fstab': lxc.container_fstab(name),
-                           'aufs': list(lxc.aufs_stack(fstab))})
+        fstab = lxc.container_fstab(name)
+        web.header("Content-Type", "application/json")
+        return json.dumps({'fstab': fstab, 'aufs': list(lxc.aufs_stack(fstab))})
 
 class Config(object):
     def GET(self, name):
