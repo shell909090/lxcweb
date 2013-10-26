@@ -139,11 +139,11 @@ def cgroupinfo(name):
     return rslt
 
 def ps(name):
-    output = subprocess.check_output(['sudo', 'lxc-ps', '-n', name, 'axu'])
+    output = subprocess.check_output(['sudo', 'lxc-ps', '-n', name, 'auxf'])
     for line in output.splitlines():
         if line.startswith('CONTAINER'): continue
-        i = line.strip().split()
-        i[11] = ' '.join(i[11:])
+        i = line.strip().split(None, 10)
+        i.extend(i.pop(10).split(' ', 1))
         yield i[1:12]
 
 def df(name, all=False):

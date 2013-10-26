@@ -15,8 +15,12 @@
       <a href="/clone/${nm}/">clone</a>
       <a href="/merge/${nm}">merge</a>
     % endif
-      <a href="/clone/${nm}/?mode=fast">fast clone</a>
-      <a href="/destroy/${nm}">destroy</a>
+    <a href="/clone/${nm}/?mode=fast">fast clone</a>
+    <a href="/destroy/${nm}">destroy</a>
+    <form method="POST" action="/attach/${nm}">
+      <input type="text" name="cmd"/>
+      <input type="submit" value="run"/>
+    </form>
     <table>
       <tr>
 	<td>status</td><td>pid</td><td>disk usage</td>

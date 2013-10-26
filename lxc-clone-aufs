@@ -6,6 +6,7 @@
 # Authors:
 # Serge Hallyn <serge.hallyn@ubuntu.com>
 # Daniel Lezcano <daniel.lezcano@free.fr>
+# Shell Xu <shell909090@gmail.com>
 
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -59,7 +60,7 @@ snapshot=no
 lxc_size=_unset
 lxc_vg=lxc
 lxc_lv_prefix=""
-fstype=ext3
+fstype=ext4
 
 while [ $# -gt 0 ]; do
     opt="$1"
@@ -181,10 +182,9 @@ hostname=$lxc_new
 
 echo "Tweaking configuration"
 cp $lxc_path/$lxc_orig/config $lxc_path/$lxc_new/config
-sed -i '/lxc.utsname/d' $lxc_path/$lxc_new/config
-echo "lxc.utsname = $hostname" >> $lxc_path/$lxc_new/config
+sed -i "s/lxc.utsname.*/lxc.utsname = $hostname/" $lxc_path/$lxc_new/config
 
-grep "lxc.mount[ \t]" $lxc_path/$lxc_new/config >/dev/null 2>&1 && { sed -i '/lxc.mount[ \t]/d' $lxc_path/$lxc_new/config; echo "lxc.mount = $lxc_path/$lxc_new/fstab" >> $lxc_path/$lxc_new/config; }
+grep "lxc.mount[[:space:]]" $lxc_path/$lxc_new/config >/dev/null 2>&1 && { sed -i "s@lxc.mount[[:space:]]=.*@lxc.mount\t= $lxc_path/$lxc_new/fstab@" $lxc_path/$lxc_new/config; }
 
 if [ -e  $lxc_path/$lxc_orig/fstab ];then
     cp $lxc_path/$lxc_orig/fstab $lxc_path/$lxc_new/fstab
@@ -262,8 +262,13 @@ else
     fi
     mkdir -p $rootfs/ $rootfs.w/
     # TODO: second clone?
-    sed -i "1inone $rootfs/ aufs defaults,br=$rootfs.w/=rw:$oldroot/=r 0 0" $lxc_path/$lxc_new/fstab;
-    mount -t aufs -o br=$rootfs.w/=rw:$oldroot/=r none $rootfs/
+    if grep "aufs" $lxc_path/$lxc_new/fstab > /dev/null 2>&1; then
+	cat $lxc_path/$lxc_orig/fstab | awk -v OLDROOT=$lxc_path/$lxc_orig -v ROOTFS=$lxc_path/$lxc_new '{if (/aufs/) { sub(/=rw/, "=r"); sub(/br=/, "br=" ROOTFS "/rootfs.w/=rw:"); sub(OLDROOT "/rootfs", ROOTFS "/rootfs"); print } else { sub(OLDROOT, ROOTFS); print }}' > $lxc_path/$lxc_new/fstab
+    else
+	sed -i "1inone $rootfs aufs defaults,br=$rootfs.w/=rw:$oldroot/=r 0 0" $lxc_path/$lxc_new/fstab;
+    fi
+    options=$(head -n 1 $lxc_path/$lxc_new/fstab | awk '{print $4}')
+    mount -t aufs -o $options none $rootfs/
     mounted=1
     echo "lxc.rootfs = $rootfs" >> $lxc_path/$lxc_new/config
     if [ $container_running = "True" ]; then

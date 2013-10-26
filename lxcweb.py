@@ -45,13 +45,21 @@ def fullinfo():
 
 # info actions
 
+class ListJson(object):
+    def GET(self):
+        return json.dumps(dict(fullinfo()))
+
 class Home(object):
     def GET(self):
         return rander.home(infos=dict(fullinfo()), rs=readable_size)
 
-class List(object):
-    def GET(self):
-        return json.dumps(dict(fullinfo()))
+class InfoJson(object):
+    def GET(self, name):
+        ps, info = [], lxc.info(name)
+        if info['state'] == 'RUNNING':
+            info.update(lxc.cgroupinfo(name))
+        info['diskusage'] = lxc.df(name, True) / 1024
+        return json.dumps(info=info)
 
 class Info(object):
     def GET(self, name):
@@ -61,10 +69,24 @@ class Info(object):
         info['diskusage'] = lxc.df(name, True) / 1024
         return rander.info(nm=name, info=info, rs=readable_size)
 
+class PsJson(object):
+    def GET(self, name):
+        info = state_check(name, 'RUNNING')
+        return json.dumps(list(lxc.ps(name)))
+
 class Ps(object):
     def GET(self, name):
         info = state_check(name, 'RUNNING')
         return rander.ps(nm=name, ps=list(lxc.ps(name)))
+
+class ConfigJson(object):
+    def GET(self, name):
+        return json.dumps(lxc.container_config(name))
+
+class FstabJson(object):
+    def GET(self, name):
+        return json.dumps({'fstab': lxc.container_fstab(name),
+                           'aufs': list(lxc.aufs_stack(fstab))})
 
 class Config(object):
     def GET(self, name):
@@ -72,14 +94,6 @@ class Config(object):
         fstab = lxc.container_fstab(name)
         aufs = list(lxc.aufs_stack(fstab))
         return rander.config(nm=name, cfg=cfg, fstab=fstab, aufs=aufs)
-
-class Cfg(object):
-    def GET(self, name):
-        return json.dumps(lxc.container_config(name))
-
-class Mount(object):
-    def GET(self, name):
-        return json.dumps(lxc.container_fstab(name))
 
 # image actions
 

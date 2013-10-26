@@ -34,19 +34,21 @@ import lxcweb
 urls = (
     # info actions
     '/', lxcweb.Home,
+    '/list.json', lxcweb.ListJson,
+    '/info/(.*).json', lxcweb.InfoJson,
     '/info/(.*)', lxcweb.Info,
-    '/config/(.*)', lxcweb.Config,
+    '/ps/(.*).json', lxcweb.PsJson,
     '/ps/(.*)', lxcweb.Ps,
-    '/list', lxcweb.List,
-    '/cfg/(.*)', lxcweb.Cfg,
-    '/mount/(.*)', lxcweb.Mount,
+    '/config/(.*).json', lxcweb.ConfigJson,
+    '/fstab/(.*).json', lxcweb.FstabJson,
+    '/config/(.*)', lxcweb.Config,
 
     # image actions
     '/clone/(.*)/(.*)', lxcweb.Clone,
     '/create/(.*)', lxcweb.Create,
     '/destroy/(.*)', lxcweb.Destroy,
     '/merge/(.*)', lxcweb.Merge,
-    
+
     # container actions
     '/start/(.*)', lxcweb.Start,
     '/stop/(.*)', lxcweb.Stop,
