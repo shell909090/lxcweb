@@ -16,39 +16,11 @@
     $(document).ready(function(){
 	p = $(location).attr('href').split('/');
 	var name = p[p.length - 1];
-	$("form#command").attr('action', '/attach/' + name);
 	$.ajax({
 	    url: '/info/' + name + '.json',
 	    cache: false,
 	    dataType: "json",
 	    success: function(data){
-		if (data['state'] == "RUNNING") {
-		    $("#menu").append('<li><a href="/stop/' + name + '\">stop</a></li>');
-		    $("#menu").append('<li><a href="/reboot/' + name + '\">reboot</a></li>');
-		} else if (data['state'] == "STOPPED") {
-		    $("#menu").append('<li><a id="clone" href="#">clone</a></li>');
-		    $("#menu").append('<li><a href="/merge/' + name + '">merge</a></li>');
-		}
-		$("#menu").append('<li><a id="fastclone" href="#">fast clone</a></li>');
-		$("#menu").append('<li><a href="/destroy/' + name + '">destroy</a></li>');
-
-		$("#clone").click(function(){
-		    if (! $("#container_name").val()) {
-			alert("container name is empty");
-		    } else {
-			location.href='/clone/' + name + '/' + $("#container_name").val();
-		    }
-		    return false;
-		});
-		$("#fastclone").click(function(){
-		    if (! $("#container_name").val()) {
-			alert("container name is empty");
-		    } else {
-			location.href='/clone/' + name + '/' + $("#container_name").val() + '?mode=fast';
-		    }
-		    return false;
-		});
-
 		$("#info tbody").append("<tr><td>status</td><td>" + data['state'] + "</td></tr>");
 		$("#info tbody").append("<tr><td>pid</td><td>" + data['pid'] + "</td></tr>");
 		$("#info tbody").append("<tr><td>disk usage</td><td>" + data['diskusage'] + " MB</td></tr>");
@@ -74,15 +46,6 @@
 	    <thead><tr><td>name</td><td>value</td></tr></thead>
 	    <tbody></tbody>
 	  </table>
-	</td>
-	<td>
-	  <input type="text" id="container_name"/>
-	  <ul id="menu">
-	    <li><a href="/">back</a></li>
-	  </ul>
-	  <form id="command" method="POST">
-	    <input type="text" name="cmd"/><input type="submit" value="run"/>
-	  </form>
 	</td>
       </tr>
     </table>

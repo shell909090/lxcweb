@@ -11,7 +11,7 @@
 	    return "--"
 	}
 	s = s / 1024 / 1024;
-	return s.toFixed(0) + " MB"
+	return s.toFixed(0)+" MB"
     }
     $(document).ready(function(){
 	$.ajax({
@@ -21,27 +21,65 @@
 	    success: function(data){
 		$.each(data, function(name, item){
 		    newtr = "<tr>";
-		    newtr += "<td><a href=\"/info/" + name + "\">" + name + "</a></td>";
+		    newtr += "<td><a href=\"/info/"+name+"\">"+name+"</a></td>";
 		    if (item["state"] == "RUNNING") {
-			newtr += "<td><a href=\"/shutdown/" + name + "\">" + item["state"] + "</a></td>";
-			newtr += "<td><a href=\"/ps/" + name + "\">" + item["pids"].length + "</a></td>";
-			newtr += "<td>" + readable_size(item["cache"]) + "</td>";
-			newtr += "<td>" + readable_size(item["rss"]) + "</td>";
-			newtr += "<td>" + item["cpu_usage"] + "</td>";
+			newtr += "<td><a href=\"/shutdown/"+name+"\">"+item["state"]+"</a></td>";
+			newtr += "<td><a href=\"/ps/"+name+"\">"+item["pids"].length+"</a></td>";
+			newtr += "<td>"+readable_size(item["cache"])+"</td>";
+			newtr += "<td>"+readable_size(item["rss"])+"</td>";
+			newtr += "<td>"+item["cpu_usage"]+"</td>";
+			newtr += '<td>';
 			$.each(item["ipaddr"], function(i, ipaddr){
-			    newtr += "<td>" + ipaddr[0] + "/" + ipaddr[1] + "</td>";
+			    newtr += '<a href="http://'+ipaddr[0]+'/">'+ipaddr[0]+'</a>/'+ipaddr[1];
 			});
+			newtr += '</td>';
 		    } else {
-			newtr += "<td><a href=\"/start/" + name + "\">" + item["state"] + "</a></td>";
+			newtr += "<td><a href=\"/start/"+name+"\">"+item["state"]+"</a></td>";
 			newtr += "<td>--</td>";
 			newtr += "<td>--</td>";
 			newtr += "<td>--</td>";
 			newtr += "<td>--</td>";
 			newtr += "<td>--</td>";
 		    }
-		    newtr += "<td><a href=\"/config/" + name + "\">config</a></td>";
-		    newtr += "</tr>";
+
+		    newtr += "<td><a href=\"/config/"+name+"\">config</a>";
+		    if (item['state'] == "RUNNING") {
+			newtr += ' <a href="/stop/'+name+'\">stop</a>';
+			newtr += ' <a href="/reboot/'+name+'\">reboot</a>';
+		    } else if (item['state'] == "STOPPED") {
+			newtr += ' <a class="clone" href="'+name+'">clone</a>';
+			newtr += ' <a href="/merge/'+name+'">merge</a>';
+		    }
+		    newtr += ' <a class="clone" mode="fast" href="'+name+'">fast clone</a>';
+		    newtr += ' <a href="/destroy/'+name+'">destroy</a>';
+		    newtr += ' <a class="run" href="'+name+'">run</a>';
+		    newtr += "</td></tr>";
 		    $("#vmlist tbody").append(newtr);
+		});
+		$(".clone").click(function(){
+		    if (! $("#container_name").val()) {
+			alert("container name is empty");
+			return false;
+		    } else {
+			name = $(this).attr("href");
+			url = '/clone/'+name+'/'+$("#container_name").val();
+			if ($(this).attr('mode') === "fast") {
+				url += '?mode=fast';
+			}
+			$(this).attr("href", url);
+			return true;
+		    }
+		});
+		$(".run").click(function(){
+		    if (! $("#command input").val()) {
+			alert('command is empty');
+			return false;
+		    } else {
+			name = $(this).attr("href");
+			$('#command').attr("action", '/attach/' + name);
+			$('#command').submit();
+			return false;
+		    }
 		});
 	    },
 	});
@@ -60,5 +98,9 @@
       </thead>
       <tbody></tbody>
     </table>
+    <input type="text" id="container_name"/>
+    <form id="command" method="POST">
+      <input type="text" name="cmd"/>
+    </form>
   </body>
 </html>

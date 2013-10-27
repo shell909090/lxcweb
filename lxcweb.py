@@ -4,7 +4,7 @@
 @date: 2013-10-24
 @author: shell.xu
 '''
-import os, sys, json
+import os, sys, json, urlparse
 import web
 import lxc
 
@@ -167,5 +167,7 @@ class Reboot(object):
 class Attach(object):
     def POST(self, name):
         cmd = web.data()
+        if cmd.startswith('cmd='):
+            cmd = urlparse.parse_qs(cmd)['cmd'][0]
         web.header('Content-Type', 'text/plain')
-        return lxc.check_output(name, cmd)
+        return lxc.check_output(name, cmd.split())
