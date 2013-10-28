@@ -1,10 +1,64 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<!DOCTYPE HTML>
 <html>
   <head>
-    <title>home</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>LxcWeb Config</title>
+    <meta charset="utf-8" />
     <meta name="author" content="shell">
-    <script type="text/javascript" src="http://code.jquery.com/jquery-1.5.2.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="/static/css/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-responsive.min.css" />
+    <link rel="stylesheet" type="text/css" href="/static/css/style.css" />
+  </head>
+  <body>
+  	<div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li><a href="/">Home</a></li>
+              <li><a href="/ps/">PS</a></li>
+              <li class="active"><a href="#">Config</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="container">
+	    <table>
+	      <tr>
+					<td>
+			  		<table id="config">
+			    		<thead>
+			      		<tr><td>name</td><td>value</td></tr>
+			    		</thead>
+			    		<tbody></tbody>
+			  		</table>
+					</td>
+					<td>
+		  			<table id="aufs">
+					    <thead>
+					      <tr><td>attr</td><td>path</td></tr>
+					    </thead>
+					    <tbody></tbody>
+					  </table>
+					  <table id="fstab">
+					    <thead>
+					      <tr>
+									<td>source</td><td>target</td><td>filesystem</td><td>options</td>
+					      </tr>
+					    </thead>
+					    <tbody></tbody>
+					  </table>
+					</td>
+	      </tr>
+	    </table>
+  	</div>
+    <script type="text/javascript" src="/static/js/jquery-1.10.2.min.js" charset="utf-8"></script>
     <script>
     $(document).ready(function(){
 	p = $(location).attr('href').split('/');
@@ -54,36 +108,5 @@
 	});
     });
     </script>
-  </head>
-
-  <body>
-    <table>
-      <tr>
-	<td>
-	  <table id="config">
-	    <thead>
-	      <tr><td>name</td><td>value</td></tr>
-	    </thead>
-	    <tbody></tbody>
-	  </table>
-	</td>
-	<td>
-	  <table id="aufs">
-	    <thead>
-	      <tr><td>attr</td><td>path</td></tr>
-	    </thead>
-	    <tbody></tbody>
-	  </table>
-	  <table id="fstab">
-	    <thead>
-	      <tr>
-		<td>source</td><td>target</td><td>filesystem</td><td>options</td>
-	      </tr>
-	    </thead>
-	    <tbody></tbody>
-	  </table>
-	</td>
-      </tr>
-    </table>
   </body>
 </html>
