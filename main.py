@@ -23,7 +23,6 @@ logger = logging.getLogger('main')
 DEBUG = not path.isfile('RELEASE')
 web.config.debug = DEBUG
 web.config.rootdir = path.dirname(__file__)
-# web.config.db = web.database(dbn='postgres', db='hosts')
 web.config.render = render_mako(
     directories = ['templates'],  imports = ['import web'],
     default_filters = ['decode.utf8'], filesystem_checks = DEBUG,
@@ -40,14 +39,14 @@ def serve_file(filepath):
 import lxcweb
 urls = (
     # info actions
-    '/', serve_file('templates/home.html'),
+    '/', serve_file('static/home.html'),
     '/list.json', lxcweb.ListJson,
     '/info/(.*).json', lxcweb.InfoJson,
     '/ps/(.*).json', lxcweb.PsJson,
-    '/ps/.*', serve_file('templates/ps.html'),
+    '/ps/.*', serve_file('static/ps.html'),
     '/config/(.*).json', lxcweb.ConfigJson,
     '/fstab/(.*).json', lxcweb.FstabJson,
-    '/config/.*', serve_file('templates/config.html'),
+    '/config/.*', serve_file('static/config.html'),
 
     # image actions
     '/clone/(.*)/(.*)', lxcweb.Clone,

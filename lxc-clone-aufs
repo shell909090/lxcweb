@@ -261,7 +261,6 @@ else
         frozen=1
     fi
     mkdir -p $rootfs/ $rootfs.w/
-    # TODO: second clone?
     if grep "aufs" $lxc_path/$lxc_new/fstab > /dev/null 2>&1; then
 	cat $lxc_path/$lxc_orig/fstab | awk -v OLDROOT=$lxc_path/$lxc_orig -v ROOTFS=$lxc_path/$lxc_new '{if (/aufs/) { sub(/=rw/, "=r"); sub(/br=/, "br=" ROOTFS "/rootfs.w/=rw:"); sub(OLDROOT "/rootfs", ROOTFS "/rootfs"); print } else { sub(OLDROOT, ROOTFS); print }}' > $lxc_path/$lxc_new/fstab
     else
