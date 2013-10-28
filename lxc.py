@@ -103,8 +103,8 @@ def merge(name):
     fstab = container_fstab(name)
     aufs = list(aufs_stack(fstab))
     for i in aufs: subprocess.check_call(['rsync', '-Hax', i[0], rootfs])
-    # remove aufs in fstab
-    # remove rw?
+    # TODO: remove aufs in fstab
+    # TODO: remove rw?
 
 # info methods
 
@@ -193,8 +193,3 @@ def ipaddr(name, dev=''):
         i = m.group(1).split('/')
         if i[0] in ('127.0.0.1',): continue
         yield i[0], int(i[1])
-
-def main():
-    pass
-
-if __name__ == '__main__': main()

@@ -8,10 +8,6 @@ import os, sys, json, urlparse
 import web
 import lxc
 
-rander = web.config.render
-
-# TODO: authorized
-
 def httperr(msg):
     raise web.InternalError(json.dumps({'msg': msg}))
 
@@ -23,82 +19,52 @@ def state_check(name, st, exist=True):
         httperr('%s not %s' % (name, st.lower()))
     return info
 
-def readable_size(i, tgt=None):
-    F = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB', 'NMB']
-    if i is None: return None
-    if tgt: tgt = F.index(tgt)
-    if tgt == -1: tgt = None
-    j, i = 0, int(i)
-    while i > 1024:
-        i >>= 10
-        j += 1
-        if tgt and j == tgt: break
-    return '%d %s' % (i, F[j])
-
-def fullinfo():
-    for v in lxc.ls():
-        info = lxc.info(v)
-        if info['state'] == 'RUNNING':
-            info.update(lxc.cgroupinfo(v))
-            info['ipaddr'] = list(lxc.ipaddr(v))
-        yield v, info
+def jsondec(func):
+    def inner(self, *p):
+        obj = func(self, *p)
+        web.header("Content-Type", "application/json")
+        return json.dumps(obj)
+    return inner
 
 # info actions
 
 class ListJson(object):
+    @jsondec
     def GET(self):
-        web.header("Content-Type", "application/json")
-        return json.dumps(dict(fullinfo()))
-
-class Home(object):
-    def GET(self):
-        return rander.home(infos=dict(fullinfo()), rs=readable_size)
+        infos = {}
+        for name in lxc.ls():
+            info = lxc.info(name)
+            if info['state'] == 'RUNNING':
+                info.update(lxc.cgroupinfo(name))
+                info['ipaddr'] = list(lxc.ipaddr(name))
+            infos[name] = info
+        return infos
 
 class InfoJson(object):
+    @jsondec
     def GET(self, name):
-        ps, info = [], lxc.info(name)
+        info = lxc.info(name)
         if info['state'] == 'RUNNING':
             info.update(lxc.cgroupinfo(name))
         info['diskusage'] = lxc.df(name, True) / 1024
-        web.header("Content-Type", "application/json")
-        return json.dumps(info)
-
-class Info(object):
-    def GET(self, name):
-        ps, info = [], lxc.info(name)
-        if info['state'] == 'RUNNING':
-            info.update(lxc.cgroupinfo(name))
-        info['diskusage'] = lxc.df(name, True) / 1024
-        return rander.info(nm=name, info=info, rs=readable_size)
+        return info
 
 class PsJson(object):
+    @jsondec
     def GET(self, name):
         info = state_check(name, 'RUNNING')
-        web.header("Content-Type", "application/json")
-        return json.dumps(list(lxc.ps(name)))
-
-class Ps(object):
-    def GET(self, name):
-        info = state_check(name, 'RUNNING')
-        return rander.ps(nm=name, ps=list(lxc.ps(name)))
+        return list(lxc.ps(name))
 
 class ConfigJson(object):
+    @jsondec
     def GET(self, name):
-        web.header("Content-Type", "application/json")
-        return json.dumps(lxc.container_config(name))
+        return lxc.container_config(name)
 
 class FstabJson(object):
+    @jsondec
     def GET(self, name):
         fstab = lxc.container_fstab(name)
-        web.header("Content-Type", "application/json")
-        return json.dumps({'fstab': fstab, 'aufs': list(lxc.aufs_stack(fstab))})
-
-class Config(object):
-    def GET(self, name):
-        cfg = lxc.container_config(name)
-        fstab = lxc.container_fstab(name)
-        aufs = list(lxc.aufs_stack(fstab))
-        return rander.config(nm=name, cfg=cfg, fstab=fstab, aufs=aufs)
+        return {'fstab': fstab, 'aufs': list(lxc.aufs_stack(fstab))}
 
 # image actions
 
@@ -132,7 +98,7 @@ class Destroy(object):
 
 class Merge(object):
     def GET(self, name):
-        state_check(name, 'RUNNING')
+        state_check(name, 'STOPPED')
         lxc.merge(name)
         return web.seeother('/')
 

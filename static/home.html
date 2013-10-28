@@ -18,7 +18,7 @@ function each_vm(name, item){
     newtr = '<tr name="'+name+'">';
     if (item["state"] == "RUNNING") {
 	newtr += '<td><img class="infotip" src="/static/user-online.png"/></td>';
-	newtr += '<td><a href="/info/'+name+'">'+name+'</a></td>';
+	newtr += '<td>'+name+'</td>';
 	newtr += '<td><a href="/ps/'+name+'">'+item["pids"].length+'</a></td>';
 	newtr += '<td>'+readable_size(item['cache'])+'</td>';
 	newtr += '<td>'+readable_size(item['rss'])+'</td>';
@@ -30,7 +30,7 @@ function each_vm(name, item){
 	newtr += '</td>';
     } else {
 	newtr += '<td><img class="infotip" src="/static/user-offline.png"/></td>';
-	newtr += '<td><a href="/info/'+name+'">'+name+'</a></td>';
+	newtr += '<td>'+name+'</td>';
 	newtr += '<td>--</td>';
 	newtr += '<td>--</td>';
 	newtr += '<td>--</td>';

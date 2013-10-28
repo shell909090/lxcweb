@@ -4,9 +4,8 @@
 @date: 2011-05-05
 @author: shell.xu
 '''
-import os, sys, web, logging
+import os, sys, web, base64, logging
 from os import path
-from web.contrib.template import render_mako
 
 def initlog(lv, logfile=None):
     rootlog = logging.getLogger()
@@ -23,11 +22,8 @@ logger = logging.getLogger('main')
 DEBUG = not path.isfile('RELEASE')
 web.config.debug = DEBUG
 web.config.rootdir = path.dirname(__file__)
-web.config.render = render_mako(
-    directories = ['templates'],  imports = ['import web'],
-    default_filters = ['decode.utf8'], filesystem_checks = DEBUG,
-    module_directory = None if DEBUG else '/tmp/mako_modules',
-    input_encoding = 'utf-8', output_encoding = 'utf-8')
+web.config.username = 'admin'
+web.config.password = 'admin123'
 
 def serve_file(filepath):
     class ServeFile(object):
@@ -64,6 +60,18 @@ urls = (
     '/attach/(.*)', lxcweb.Attach,
 )
 app = web.application(urls)
+
+def auth_proc(handler):
+    auth = web.ctx.env.get('HTTP_AUTHORIZATION')
+    if auth and auth.startswith('Basic '):
+        auth = auth[6:]
+        username, password = base64.decodestring(auth).split(':', 1)
+        if username == web.config.username and password == web.config.password:
+            return handler()
+    web.header('WWW-Authenticate', 'Basic realm="user login"')
+    web.ctx.status = '401 Unauthorized'
+    return
+app.add_processor(auth_proc)
 
 # if web.config.get('sesssion') is None:
 #     web.config.session = web.session.Session(
