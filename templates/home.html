@@ -1,89 +1,143 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-    <html>
-    <head>
+<html>
+  <head>
     <title>home</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <meta name="author" content="shell">
-    <script type="text/javascript" src="http://code.jquery.com/jquery-1.5.2.min.js"></script>
+    <script type="text/javascript" src="/static/jquery-1.7.2.min.js"></script>
     <script>
-    function readable_size(s){
-	if (! s) {
-	    return "--"
-	}
-	s = s / 1024 / 1024;
-	return s.toFixed(0)+" MB"
+function readable_size(s){
+    if (! s) {
+	return "--"
     }
-    $(document).ready(function(){
-	$.ajax({
-	    url: '/list.json',
-	    cache: false,
-	    dataType: "json",
-	    success: function(data){
-		$.each(data, function(name, item){
-		    newtr = "<tr>";
-		    newtr += "<td><a href=\"/info/"+name+"\">"+name+"</a></td>";
-		    if (item["state"] == "RUNNING") {
-			newtr += "<td><a href=\"/shutdown/"+name+"\">"+item["state"]+"</a></td>";
-			newtr += "<td><a href=\"/ps/"+name+"\">"+item["pids"].length+"</a></td>";
-			newtr += "<td>"+readable_size(item["cache"])+"</td>";
-			newtr += "<td>"+readable_size(item["rss"])+"</td>";
-			newtr += "<td>"+item["cpu_usage"]+"</td>";
-			newtr += '<td>';
-			$.each(item["ipaddr"], function(i, ipaddr){
-			    newtr += '<a href="http://'+ipaddr[0]+'/">'+ipaddr[0]+'</a>/'+ipaddr[1];
-			});
-			newtr += '</td>';
-		    } else {
-			newtr += "<td><a href=\"/start/"+name+"\">"+item["state"]+"</a></td>";
-			newtr += "<td>--</td>";
-			newtr += "<td>--</td>";
-			newtr += "<td>--</td>";
-			newtr += "<td>--</td>";
-			newtr += "<td>--</td>";
-		    }
+    s = s / 1024 / 1024;
+    return s.toFixed(0)+" MB"
+}
 
-		    newtr += "<td><a href=\"/config/"+name+"\">config</a>";
-		    if (item['state'] == "RUNNING") {
-			newtr += ' <a href="/stop/'+name+'\">stop</a>';
-			newtr += ' <a href="/reboot/'+name+'\">reboot</a>';
-		    } else if (item['state'] == "STOPPED") {
-			newtr += ' <a class="clone" href="'+name+'">clone</a>';
-			newtr += ' <a href="/merge/'+name+'">merge</a>';
-		    }
-		    newtr += ' <a class="clone" mode="fast" href="'+name+'">fast clone</a>';
-		    newtr += ' <a href="/destroy/'+name+'">destroy</a>';
-		    newtr += ' <a class="run" href="'+name+'">run</a>';
-		    newtr += "</td></tr>";
-		    $("#vmlist tbody").append(newtr);
-		});
-		$(".clone").click(function(){
-		    if (! $("#container_name").val()) {
-			alert("container name is empty");
-			return false;
-		    } else {
-			name = $(this).attr("href");
-			url = '/clone/'+name+'/'+$("#container_name").val();
-			if ($(this).attr('mode') === "fast") {
-				url += '?mode=fast';
-			}
-			$(this).attr("href", url);
-			return true;
-		    }
-		});
-		$(".run").click(function(){
-		    if (! $("#command input").val()) {
-			alert('command is empty');
-			return false;
-		    } else {
-			name = $(this).attr("href");
-			$('#command').attr("action", '/attach/' + name);
-			$('#command').submit();
-			return false;
-		    }
-		});
-	    },
+function each_vm(name, item){
+    newtr = '<tr name="'+name+'">';
+    if (item["state"] == "RUNNING") {
+	newtr += '<td><img class="infotip" src="/static/user-online.png"/></td>';
+	newtr += '<td><a href="/info/'+name+'">'+name+'</a></td>';
+	newtr += '<td><a href="/ps/'+name+'">'+item["pids"].length+'</a></td>';
+	newtr += '<td>'+readable_size(item['cache'])+'</td>';
+	newtr += '<td>'+readable_size(item['rss'])+'</td>';
+	newtr += '<td>'+item['cpu_usage']+'</td>';
+	newtr += '<td>';
+	$.each(item['ipaddr'], function(i, ipaddr){
+	    newtr += '<a href="http://'+ipaddr[0]+'">'+ipaddr[0]+'</a>/'+ipaddr[1];
 	});
+	newtr += '</td>';
+    } else {
+	newtr += '<td><img class="infotip" src="/static/user-offline.png"/></td>';
+	newtr += '<td><a href="/info/'+name+'">'+name+'</a></td>';
+	newtr += '<td>--</td>';
+	newtr += '<td>--</td>';
+	newtr += '<td>--</td>';
+	newtr += '<td>--</td>';
+	newtr += '<td>--</td>';
+    }
+
+    newtr += '<td><a href="/config/'+name+'"><img class="tip" src="/static/configure-3.png" alt="config"/></a>';
+    if (item['state'] == 'RUNNING') {
+	newtr += '<a href="/shutdown/'+name+'"><img class="tip" src="/static/media-playback-stop-3.png" alt="shutdown"/></a>';
+	newtr += '<a href="/stop/'+name+'"><img class="tip" src="/static/application-exit-5.png" alt="stop"/></a>';
+	newtr += '<a href="/reboot/'+name+'"><img class="tip" src="/static/system-reboot-2.png" alt="reboot"/></a>';
+    } else if (item['state'] == "STOPPED") {
+	newtr += '<a href="/start/'+name+'"><img class="tip" src="/static/media-playback-start-3.png" alt="start"/></a>';
+	newtr += '<a class="clone" href=""><img class="tip" src="/static/db_add-2.png" alt="clone"/></a>';
+	newtr += '<a href="/merge/'+name+'"><img class="tip" src="/static/db_comit.png" alt="merge"/></a>';
+    }
+    newtr += '<a class="clone" mode="fast" href=""><img class="tip" src="/static/db_add.png" alt="fast clone"/></a>';
+    newtr += '<a href="/destroy/'+name+'"><img class="tip" src="/static/edit-delete-9.png" alt="destroy"/></a>';
+    newtr += '<a class="run" href="'+name+'"><img class="tip" src="/static/system-run-5.png" alt="run"/></a>';
+    newtr += "</td></tr>";
+    $("#vmlist tbody").append(newtr);
+}
+
+function refresh_info(name){
+    $.ajax({
+	url: '/info/'+name+'.json',
+	cache: false,
+	dataType: "json",
+	success: function(data){
+	    newtr = '<tr><td>status</td><td>'+data['state']+'</td></tr>';
+	    newtr += '<tr><td>pid</td><td>'+data['pid']+'</td></tr>';
+	    newtr += '<tr><td>disk usage</td><td>'+data['diskusage']+' MB</td></tr>';
+	    if (data['state'] == 'RUNNING') {
+		newtr += '<tr><td>cpu</td><td>'+data['cpu_usage']+'</td></tr>';
+		newtr += '<tr><td>user</td><td>'+data['user']+'</td></tr>';
+		newtr += '<tr><td>system</td><td>'+data['system']+'</td></tr>';
+		newtr += '<tr><td>memory</td><td>'+readable_size(data['memory'])+'</td></tr>';
+		newtr += '<tr><td>cache</td><td>'+readable_size(data['cache'])+'</td></tr>';
+		newtr += '<tr><td>rss</td><td>'+readable_size(data['rss'])+'</td></tr>';
+	    }
+	    $('#info tbody').append(newtr);
+	},
+    });    
+}
+
+function refresh_main(){
+    $.ajax({
+	url: '/list.json',
+	cache: false,
+	dataType: 'json',
+	success: function(data){
+	    $.each(data, each_vm);
+
+	    $('.clone').click(function(){
+		if (! $('#container_name').val()) {
+		    alert('container name is empty');
+		    return false;
+		}
+		name = $(this).parents('tr').attr('name');
+		url = '/clone/'+name+'/'+$('#container_name').val();
+		if ($(this).attr('mode') === 'fast') {
+		    url += '?mode=fast';
+		}
+		$(this).attr('href', url);
+		return true;
+	    });
+
+	    $('.run').click(function(){
+		if (! $('#command input').val()) {
+		    alert('command is empty');
+		    return false;
+		}
+		name = $(this).parents('tr').attr('name');
+		$('#command').attr('action', '/attach/'+name);
+		$('#command').submit();
+		return false;
+	    });
+
+	    $('.tip').mouseover(function(){  
+	    	$('#action_tip').text($(this).attr('alt'));
+	    }).mouseout(function(){  
+	    	$('#action_tip').text('');
+	    });
+
+	    $('.infotip').mouseover(function(){
+		name = $(this).parents('tr').attr('name');
+		refresh_info(name);
+	    }).mouseout(function(){
+		$('#info tbody').html('');
+	    });
+	},
     });
+}
+
+$(document).ready(function(){
+    $('#refresh').click(function(){
+	$('#vmlist tbody').html('');
+	refresh_main();
+	return false;
+    });
+    setInterval(function(){
+	$('#vmlist tbody').html('');
+	refresh_main();
+    }, 120000);
+    refresh_main();
+});
     </script>
   </head>
 
@@ -91,9 +145,9 @@
     <table id="vmlist">
       <thead>
 	<tr>
-	  <td>name</td><td>status</td><td>processes</td>
+	  <td>status</td><td>name</td><td>processes</td>
 	  <td>cache</td><td>rss</td><td>cpu time</td>
-	  <td>ipaddr</td><td>config</td>
+	  <td>ipaddr</td><td>actions</td>
 	</tr>
       </thead>
       <tbody></tbody>
@@ -102,5 +156,11 @@
     <form id="command" method="POST">
       <input type="text" name="cmd"/>
     </form>
+    <div id="action_tip"></div>
+    <a id="refresh" href=""><img src="/static/view-refresh-4.png"></a>
+    <table id="info">
+      <thead><tr><td>name</td><td>value</td></tr></thead>
+      <tbody></tbody>
+    </table>
   </body>
 </html>

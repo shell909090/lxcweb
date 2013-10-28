@@ -43,7 +43,6 @@ urls = (
     '/', serve_file('templates/home.html'),
     '/list.json', lxcweb.ListJson,
     '/info/(.*).json', lxcweb.InfoJson,
-    '/info/.*', serve_file('templates/info.html'),
     '/ps/(.*).json', lxcweb.PsJson,
     '/ps/.*', serve_file('templates/ps.html'),
     '/config/(.*).json', lxcweb.ConfigJson,
