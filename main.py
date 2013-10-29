@@ -28,12 +28,20 @@ web.config.password = 'admin123'
 def serve_file(filepath):
     class ServeFile(object):
         def GET(self):
-            with open(filepath) as fi:
+            with open(filepath, 'rb') as fi:
                 return fi.read()
     return ServeFile
 
+def serve_path(dirname):
+    class ServePath(object):
+        def GET(self, p):
+            with open(path.join(dirname, p), 'rb') as fi:
+                return fi.read()
+    return ServePath
+
 import lxcweb
 urls = (
+    '/static/(.*)', serve_path('static/'),
     # info actions
     '/', serve_file('static/home.html'),
     '/list.json', lxcweb.ListJson,
@@ -85,5 +93,7 @@ if __name__ == '__main__':
         elif cmd == 'test':
             from test import tester
             tester.testall(app)
-    else: app.run()
+    else:
+        from gevent.pywsgi import WSGIServer
+        WSGIServer(('', 8080), app.wsgifunc()).serve_forever()
 else: application = app.wsgifunc()

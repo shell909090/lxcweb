@@ -102,7 +102,7 @@ def merge(name):
     rootfs = cfg['lxc.rootfs'][-1]
     fstab = container_fstab(name)
     aufs = list(aufs_stack(fstab))
-    for i in aufs: subprocess.check_call(['rsync', '-Hax', i[0], rootfs])
+    for i in aufs: subprocess.check_call(['sudo', 'rsync', '-Hax', i[0], rootfs])
     # TODO: remove aufs in fstab
     # TODO: remove rw?
 
