@@ -26,7 +26,7 @@ This software is public under GPL-2+.
 
 * lxc (>= 0.9)
 * python-webpy
-* python-mako
+* python-gevent
 
 * /etc/default/grub: cgroup_enable=memory
 * bridge-utils
