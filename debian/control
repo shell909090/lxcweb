@@ -1,0 +1,18 @@
+Source: lxcweb
+Section: admin
+Priority: extra
+Maintainer: Shell.Xu <shell909090@gmail.com>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.4
+Homepage: http://github.com/shell909090/lxcweb
+Vcs-Git: https://github.com/shell909090/lxcweb.git
+
+Package: lxcweb
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, lxc(>= 0.9), python(>= 2.6), python-support (>= 0.90), python-gevent(>= 0.13), python-webpy(>= 1:0.37)
+Description: Web interface of lxc.
+ Lxcweb is a web interface of lxc. It offer those function:
+ * list containers in system
+ * show usage of memory and cpu
+ * start, stop, restart a container
+ * fast clone with aufs

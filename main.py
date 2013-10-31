@@ -4,8 +4,9 @@
 @date: 2011-05-05
 @author: shell.xu
 '''
-import os, sys, web, base64, logging
+import os, sys, web, base64, logging, ConfigParser
 from os import path
+from gevent.pywsgi import WSGIServer
 
 def initlog(lv, logfile=None):
     rootlog = logging.getLogger()
@@ -18,12 +19,15 @@ def initlog(lv, logfile=None):
     rootlog.addHandler(handler)
     rootlog.setLevel(lv)
 
+def read_config(cfgpaths):
+    cfg = ConfigParser.RawConfigParser(allow_no_value=True)
+    cfg.read(cfgpaths)
+    return dict(cfg.items('main')), dict(cfg.items('users'))
+
 logger = logging.getLogger('main')
 DEBUG = not path.isfile('RELEASE')
 web.config.debug = DEBUG
 web.config.rootdir = path.dirname(__file__)
-web.config.username = 'admin'
-web.config.password = 'admin123'
 
 def serve_file(filepath):
     class ServeFile(object):
@@ -70,30 +74,24 @@ urls = (
 app = web.application(urls)
 
 def auth_proc(handler):
+    if not web.config.users: return handler()
     auth = web.ctx.env.get('HTTP_AUTHORIZATION')
     if auth and auth.startswith('Basic '):
         auth = auth[6:]
         username, password = base64.decodestring(auth).split(':', 1)
-        if username == web.config.username and password == web.config.password:
+        if username == web.config.users['username'] and \
+           password == web.config.users['password']:
             return handler()
     web.header('WWW-Authenticate', 'Basic realm="user login"')
     web.ctx.status = '401 Unauthorized'
     return
 app.add_processor(auth_proc)
 
-# if web.config.get('sesssion') is None:
-#     web.config.session = web.session.Session(
-#         app, web.session.DBStore(web.config.db, 'sessions'))
-
 if __name__ == '__main__':
-    if len(sys.argv) > 1:
-        cmd = sys.argv.pop(1)
-        if cmd == 'profile':
-            app.run(web.profiler)
-        elif cmd == 'test':
-            from test import tester
-            tester.testall(app)
-    else:
-        from gevent.pywsgi import WSGIServer
-        WSGIServer(('', 8080), app.wsgifunc()).serve_forever()
+    maincfg, web.config.users = read_config([
+        'lxcweb.conf', '/etc/lxcweb/lxcweb.conf',])
+    if web.config.rootdir: os.chdir(web.config.rootdir)
+    WSGIServer(
+        ('', int(maincfg.get('port') or 9981)),
+        app.wsgifunc()).serve_forever()
 else: application = app.wsgifunc()

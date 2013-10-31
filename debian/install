@@ -1,0 +1,6 @@
+lxcweb.conf /etc/lxcweb/
+lxc-clone-aufs /usr/share/lxcweb/
+lxc.py /usr/share/lxcweb/
+lxcweb.py /usr/share/lxcweb/
+main.py /usr/share/lxcweb/
+static /usr/share/lxcweb/
