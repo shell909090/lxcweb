@@ -8,7 +8,7 @@ Homepage: http://github.com/shell909090/lxcweb
 Vcs-Git: https://github.com/shell909090/lxcweb.git
 
 Package: lxcweb
-Architecture: any
+Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends}, lxc(>= 0.9), python(>= 2.6), python-support (>= 0.90), python-gevent(>= 0.13), python-webpy(>= 1:0.37)
 Description: Web interface of lxc.
  Lxcweb is a web interface of lxc. It offer those function:
