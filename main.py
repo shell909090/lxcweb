@@ -3,6 +3,7 @@
 '''
 @date: 2011-05-05
 @author: shell.xu
+@version: 0.8.1
 '''
 import os, sys, web, base64, logging, ConfigParser
 from os import path
@@ -17,6 +18,7 @@ def initlog(lv, logfile=None):
             '%(asctime)s,%(msecs)03d %(name)s[%(levelname)s]: %(message)s',
             '%H:%M:%S'))
     rootlog.addHandler(handler)
+    if isinstance(lv, basestring): lv = getattr(logging, lv)
     rootlog.setLevel(lv)
 
 def read_config(cfgpaths):
@@ -90,8 +92,14 @@ app.add_processor(auth_proc)
 if __name__ == '__main__':
     maincfg, web.config.users = read_config([
         'lxcweb.conf', '/etc/lxcweb/lxcweb.conf',])
+    initlog(maincfg.get('logging', 'INFO'))
     if web.config.rootdir: os.chdir(web.config.rootdir)
+    keyfile=maincfg.get('serverkey', '/etc/lxcweb/server.key')
+    certfile=maincfg.get('servercrt', '/etc/lxcweb/server.crt')
+    if path.exists(keyfile) and path.exists(certfile):
+        kw = {'keyfile': keyfile, 'certfile': certfile}
+    else: kw = {}
     WSGIServer(
         ('', int(maincfg.get('port') or 9981)),
-        app.wsgifunc()).serve_forever()
+        app.wsgifunc(), **kw).serve_forever()
 else: application = app.wsgifunc()
