@@ -1,4 +1,10 @@
-lxcweb (0.8-1) unstable; urgency=low
+lxcweb (0.8.1) unstable; urgency=low
+
+  * use SSL.
+
+ -- Shell.Xu <shell909090@gmail.com>  Fri, 01 Nov 2013 14:12:40 +0800
+
+lxcweb (0.8) unstable; urgency=low
 
   * Initial release.
 
