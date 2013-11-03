@@ -89,7 +89,7 @@ app.add_processor(auth_proc)
 
 if __name__ == '__main__':
     maincfg, web.config.users = read_config([
-        'lxcweb.conf', '/etc/lxcweb/lxcweb.conf',])
+        '/etc/lxcweb/lxcweb.conf', 'lxcweb.conf'])
     if web.config.rootdir: os.chdir(web.config.rootdir)
     WSGIServer(
         ('', int(maincfg.get('port') or 9981)),

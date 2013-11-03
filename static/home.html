@@ -39,13 +39,12 @@
         </thead>
         <tbody></tbody>
       </table>
-      <form class="form-inline" id="command" method="POST">
-        <input class="inline" type="text" id="container_name" placeholder="Container Name" />
+      <form style="display:none" class="form-inline" id="command" method="POST">
         <input class="inline" type="text" name="cmd" placeholder="cmd" />
-        <a id="refresh" href=""><img src="/static/view-refresh-4.png"></a>
       </form>
+      <a id="refresh" href=""><img src="/static/view-refresh-4.png"></a>
       <div id="action_tip"></div>
-      <table id="info" class="table table-striped table-conden">
+      <table style="display:none" id="info" class="table table-striped table-conden">
         <thead><tr><td>name</td><td>value</td></tr></thead>
         <tbody></tbody>
       </table>
@@ -61,8 +60,8 @@ function readable_size(s){
 }
 
 function each_vm(name, item){
-    newtr = '<tr name="'+name+'">';
-    if (item["state"] == "RUNNING") {
+    newtr = '<tr name="'+name+'" state="'+item['state']+'">';
+    if (item['state'] == 'RUNNING') {
 	newtr += '<td><img class="infotip" src="/static/user-online.png"/></td>';
 	newtr += '<td>'+name+'</td>';
 	newtr += '<td><a href="/ps/'+name+'">'+item["pids"].length+'</a></td>';
@@ -89,14 +88,16 @@ function each_vm(name, item){
 	newtr += '<a href="/shutdown/'+name+'"><img class="tip" src="/static/media-playback-stop-3.png" alt="shutdown"/></a>';
 	newtr += '<a class="sure" href="/stop/'+name+'"><img class="tip" src="/static/application-exit-5.png" alt="stop"/></a>';
 	newtr += '<a class="sure" href="/reboot/'+name+'"><img class="tip" src="/static/system-reboot-2.png" alt="reboot"/></a>';
+	newtr += '<a class="clone" mode="fast" href=""><img class="tip" src="/static/db_add.png" alt="fast clone"/></a>';
+	newtr += '<a class="sure" href="/destroy/'+name+'"><img class="tip" src="/static/edit-delete-9.png" alt="destroy"/></a>';
+	newtr += '<a class="run" href="'+name+'"><img class="tip" src="/static/system-run-5.png" alt="run"/></a>';
     } else if (item['state'] == "STOPPED") {
 	newtr += '<a href="/start/'+name+'"><img class="tip" src="/static/media-playback-start-3.png" alt="start"/></a>';
 	newtr += '<a class="clone" href=""><img class="tip" src="/static/db_add-2.png" alt="clone"/></a>';
 	newtr += '<a href="/merge/'+name+'"><img class="tip" src="/static/db_comit.png" alt="merge"/></a>';
+	newtr += '<a class="clone" mode="fast" href=""><img class="tip" src="/static/db_add.png" alt="fast clone"/></a>';
+	newtr += '<a class="sure" href="/destroy/'+name+'"><img class="tip" src="/static/edit-delete-9.png" alt="destroy"/></a>';
     }
-    newtr += '<a class="clone" mode="fast" href=""><img class="tip" src="/static/db_add.png" alt="fast clone"/></a>';
-    newtr += '<a class="sure" href="/destroy/'+name+'"><img class="tip" src="/static/edit-delete-9.png" alt="destroy"/></a>';
-    newtr += '<a class="run" href="'+name+'"><img class="tip" src="/static/system-run-5.png" alt="run"/></a>';
     newtr += "</td></tr>";
     $("#vmlist tbody").append(newtr);
 }
@@ -137,12 +138,17 @@ function refresh_main(){
 	    });
 
 	    $('.clone').click(function(){
-		if (! $('#container_name').val()) {
+		name = prompt('container name');
+		if (! name) {
 		    alert('container name is empty');
 		    return false;
 		}
-		name = $(this).parents('tr').attr('name');
-		url = '/clone/'+name+'/'+$('#container_name').val();
+		if ( $('#vmlist tbody tr[name='+name+']').length != 0 ){
+		    alert('container name existed.');
+		    return false;
+		}
+		origname = $(this).parents('tr').attr('name');
+		url = '/clone/'+origname+'/'+name;
 		if ($(this).attr('mode') === 'fast') {
 		    url += '?mode=fast&run=1';
 		}
@@ -151,10 +157,12 @@ function refresh_main(){
 	    });
 
 	    $('.run').click(function(){
-		if (! $('#command input[name=cmd]').val()) {
+		cmd = prompt('command to run');
+		if (! cmd) {
 		    alert('command is empty');
 		    return false;
 		}
+		$('#command input[name=cmd]').attr('value', cmd);
 		name = $(this).parents('tr').attr('name');
 		$('#command').attr('action', '/attach/'+name);
 		$('#command').submit();
@@ -170,8 +178,10 @@ function refresh_main(){
 	    $('.infotip').mouseover(function(){
 		name = $(this).parents('tr').attr('name');
 		refresh_info(name);
+		$('#info').show();
 	    }).mouseout(function(){
 		$('#info tbody').html('');
+		$('#info').hide();
 	    });
 	},
     });

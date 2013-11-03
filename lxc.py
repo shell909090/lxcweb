@@ -174,7 +174,6 @@ def shutdown(name, wait=True, reboot=False):
     if reboot: cmd.append('-r')
     return subprocess.check_call(cmd)
 
-# lxc-kill
 # lxc-execute
 
 # lxc-freeze
