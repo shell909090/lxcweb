@@ -152,4 +152,4 @@ class Attach(object):
         if cmd.startswith('cmd='):
             cmd = urlparse.parse_qs(cmd)['cmd'][0]
         web.header('Content-Type', 'text/plain')
-        return lxc.check_output(name, cmd.split())
+        return lxc.attach_check_output(name, cmd.split())
