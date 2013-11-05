@@ -122,6 +122,7 @@ function refresh_info(name){
 		newtr += '<tr><td>comment</td><td>'+data['comment']+'</td></tr>';
 	    }
 	    $('#info tbody').append(newtr);
+	    $('#info tbody').attr('name', name);
 	},
     });
 }
@@ -177,13 +178,14 @@ function refresh_main(){
 		$('#action_tip').text('');
 	    });
 
-	    $('.infotip').mouseover(function(){
-		name = $(this).parents('tr').attr('name');
-		refresh_info(name);
-		$('#info').show();
-	    }).mouseout(function(){
+	    $('.infotip').click(function(){
 		$('#info tbody').html('');
-		$('#info').hide();
+	    	$('#info').hide();
+		name = $(this).parents('tr').attr('name');
+		if (name != $('#info tbody').attr('name')){
+		    refresh_info(name);
+		    $('#info').show();
+		}
 	    });
 	},
     });
