@@ -1,3 +1,11 @@
+lxcweb (0.8.2) unstable; urgency=low
+
+  * no sudo with root.
+  + show comment.
+  + freeze container.
+
+ -- Shell.Xu <shell909090@gmail.com>  Tue, 05 Nov 2013 10:48:05 +0800
+
 lxcweb (0.8.1) unstable; urgency=low
 
   * use SSL.

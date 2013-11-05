@@ -5,9 +5,8 @@
 @author: shell.xu
 @version: 0.8.1
 '''
-import os, sys, web, base64, logging, ConfigParser
+import os, sys, web, base64, getopt, logging, ConfigParser
 from os import path
-from gevent.pywsgi import WSGIServer
 
 def initlog(lv, logfile=None):
     rootlog = logging.getLogger()
@@ -69,6 +68,8 @@ urls = (
     '/stop/(.*)', lxcweb.Stop,
     '/shutdown/(.*)', lxcweb.Shutdown,
     '/reboot/(.*)', lxcweb.Reboot,
+    '/freeze/(.*)', lxcweb.Freeze,
+    '/unfreeze/(.*)', lxcweb.Unfreeze,
 
     # runtime actions
     '/attach/(.*)', lxcweb.Attach,
@@ -87,19 +88,33 @@ def auth_proc(handler):
     web.header('WWW-Authenticate', 'Basic realm="user login"')
     web.ctx.status = '401 Unauthorized'
     return
-app.add_processor(auth_proc)
 
-if __name__ == '__main__':
+def main():
     maincfg, web.config.users = read_config([
         '/etc/lxcweb/lxcweb.conf', 'lxcweb.conf'])
     initlog(maincfg.get('logging', 'INFO'))
     if web.config.rootdir: os.chdir(web.config.rootdir)
-    keyfile=maincfg.get('serverkey', '/etc/lxcweb/server.key')
-    certfile=maincfg.get('servercrt', '/etc/lxcweb/server.crt')
-    if path.exists(keyfile) and path.exists(certfile):
-        kw = {'keyfile': keyfile, 'certfile': certfile}
-    else: kw = {}
-    WSGIServer(
-        ('', int(maincfg.get('port') or 9981)),
-        app.wsgifunc(), **kw).serve_forever()
+
+    optlist, args = getopt.getopt(sys.argv[1:], 'dhp:')
+    optdict = dict(optlist)
+    if '-h' in optdict:
+        print main.__doc__
+        return
+
+    kw = {}
+    port = int(optdict.get('-p') or maincfg.get('port') or 9981)
+    if '-d' not in optdict:
+        keyfile=maincfg.get('serverkey', '/etc/lxcweb/server.key')
+        certfile=maincfg.get('servercrt', '/etc/lxcweb/server.crt')
+        if path.exists(keyfile) and path.exists(certfile):
+            kw = {'keyfile': keyfile, 'certfile': certfile}
+        app.add_processor(auth_proc)
+    else:
+        port = int(optdict.get('-p') or 8080)
+        
+    from gevent.pywsgi import WSGIServer
+    print 'service port :%d' % port
+    WSGIServer(('', port), app.wsgifunc(), **kw).serve_forever()
+    
+if __name__ == '__main__': main()
 else: application = app.wsgifunc()

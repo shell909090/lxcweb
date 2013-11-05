@@ -10,13 +10,24 @@ from os import path
 
 global_configfile = '/etc/lxc/lxc.conf'
 default_lxcpath = '/var/lib/lxc'
+sudoflag = os.getuid() != 0
 
-def check_call(name, cmd):
-    cmd = ['sudo', 'lxc-attach', '-n', name, '--'] + cmd
+def check_call(cmd):
+    if sudoflag: cmd.insert(0, 'sudo')
     return subprocess.check_call(cmd)
 
-def check_output(name, cmd):
-    cmd = ['sudo', 'lxc-attach', '-n', name, '--'] + cmd
+def check_output(cmd):
+    if sudoflag: cmd.insert(0, 'sudo')
+    return subprocess.check_output(cmd)
+
+def attach_check_call(name, cmd):
+    cmd = ['lxc-attach', '-n', name, '--'] + cmd
+    if sudoflag: cmd.insert(0, 'sudo')
+    return subprocess.check_call(cmd)
+
+def attach_check_output(name, cmd):
+    cmd = ['lxc-attach', '-n', name, '--'] + cmd
+    if sudoflag: cmd.insert(0, 'sudo')
     return subprocess.check_output(cmd)
 
 # config methods
@@ -45,11 +56,16 @@ def global_config():
     try: return read_config(global_configfile)
     except IOError: return {'lxcpath': [default_lxcpath,]}
 
-def container_config(name):
+def container_path(name, fn=None):
     cfg = global_config()
     if not path.isdir(path.join(cfg['lxcpath'][-1], name)):
         raise Exception('invaild container %s' % name)
-    return read_config(path.join(cfg['lxcpath'][-1], name, 'config'))
+    if fn:
+        return path.join(cfg['lxcpath'][-1], name, fn)
+    else: return path.join(cfg['lxcpath'][-1], name)
+
+def container_config(name):
+    return read_config(container_path(name, 'config'))
 
 def read_fstab(filepath):
     rslt = []
@@ -61,6 +77,8 @@ def read_fstab(filepath):
 def container_fstab(name):
     cfg, rslt = container_config(name), []
     rootfs = cfg['lxc.rootfs'][-1]
+    for line in cfg.get('lxc.mount.entry', []):
+        rslt.append(line.split()[:4])
     if 'lxc.mount' in cfg:
         for r in read_fstab(cfg['lxc.mount'][-1]):
             if not r: continue
@@ -68,8 +86,6 @@ def container_fstab(name):
                 r[1] = r[1][len(rootfs):]
                 rslt.append(r)
             else: logging.warning('container %s rule not in rootfs: %s' % (name, str(r)))
-    for line in cfg.get('lxc.mount.entry', []):
-        rslt.append(line.split()[:4])
     return rslt
 
 def aufs_stack(fstab):
@@ -82,39 +98,44 @@ def aufs_stack(fstab):
                 yield p.split('=', 1)
             else: p, 'rw'
 
+def read_comment(name):
+    with open(container_path(name, 'comment'), 'r') as fi:
+        return fi.read()
+
+# TODO:
+def set_comment(name):
+    pass
+
 # image methods
 
 def clone(origin, name, fast=False):
-    if fast: cmd = ['sudo', './lxc-clone-aufs', '-o', origin, '-n', name]
-    else: cmd = ['sudo', 'lxc-clone', '-o', origin, '-n', name]
-    return subprocess.check_call(cmd)
+    if fast: cmd = ['./lxc-clone-aufs', '-o', origin, '-n', name]
+    else: cmd = ['lxc-clone', '-o', origin, '-n', name]
+    return check_call(cmd)
 
 def create(template, name):
-    cmd = ['sudo', 'lxc-create', '-t', template, '-n', name]
-    return subprocess.check_call(cmd)
+    return check_call(['lxc-create', '-t', template, '-n', name])
 
 def destroy(name):
-    cmd = ['sudo', 'lxc-destroy', '-n', name]
-    return subprocess.check_call(cmd)
+    return check_call(['lxc-destroy', '-n', name])
 
 def merge(name):
     cfg = container_config(name)
     rootfs = cfg['lxc.rootfs'][-1]
     fstab = container_fstab(name)
     aufs = list(aufs_stack(fstab))
-    for i in aufs: subprocess.check_call(['sudo', 'rsync', '-Hax', i[0], rootfs])
+    for i in aufs: check_call(['rsync', '-Hax', i[0], rootfs])
     # TODO: remove aufs in fstab
     # TODO: remove rw?
 
 # info methods
 
 def ls():
-    output = subprocess.check_output(['sudo', 'lxc-ls',])
-    for m in output.split():
-        yield m
+    output = check_output(['lxc-ls',])
+    return (i for i in output.split() if i != '.')
 
 def info(name):
-    output = subprocess.check_output(['sudo', 'lxc-info', '-n', name])
+    output = check_output(['lxc-info', '-n', name])
     return dict([i.strip() for i in line.split(':', 1)]
                 for line in output.splitlines())
 
@@ -140,7 +161,7 @@ def cgroupinfo(name):
     return rslt
 
 def ps(name):
-    output = subprocess.check_output(['sudo', 'lxc-ps', '-n', name, 'auxf'])
+    output = check_output(['lxc-ps', '-n', name, 'auxf'])
     for line in output.splitlines():
         if line.startswith('CONTAINER'): continue
         i = line.strip().split(None, 10)
@@ -148,47 +169,48 @@ def ps(name):
         yield i[1:12]
 
 def df(name, all=False):
-    if all:
-        cfg = global_config()
-        p = path.join(cfg['lxcpath'][-1], name)
+    if all: p = container_path(name)
     else:
         cfg = container_config(name)
         p = cfg['lxc.rootfs'][-1]
-    output = subprocess.check_output(['sudo', 'du', '-sk', p])
+    output = check_output(['du', '-sk', p])
     return int(output.split()[0].strip())
 
 # container methods
 
 def start(name, daemon=True):
-    cmd = ['sudo', 'lxc-start', '-n', name]
+    cmd = ['lxc-start', '-n', name]
     if daemon: cmd.append('-d')
-    return subprocess.check_call(cmd)
+    return check_call(cmd)
 
 def stop(name):
-    cmd = ['sudo', 'lxc-stop', '-n', name]
-    return subprocess.check_call(cmd)
+    return check_call(['lxc-stop', '-n', name])
 
 def shutdown(name, wait=True, reboot=False):
-    cmd = ['sudo', 'lxc-shutdown', '-n', name]
+    cmd = ['lxc-shutdown', '-n', name]
     if wait: cmd.append('-w')
     if reboot: cmd.append('-r')
-    return subprocess.check_call(cmd)
+    return check_call(cmd)
 
 # lxc-execute
 
-# lxc-freeze
-# lxc-unfreeze
+def freeze(name):
+    return check_call(['lxc-freeze', '-n', name])
 
-# lxc-wait
+def unfreeze(name):
+    return check_call(['lxc-unfreeze', '-n', name])
 
-re_inet = re.compile('inet (\S*).*')
+re_inets = (
+    re.compile('inet (\S*).*'),
+    re.compile('inet6 (\S*).*'))
 def ipaddr(name, dev=''):
     cmd = ['ip', 'addr', 'show']
     if dev: cmd.append(dev)
-    for line in check_output(name, cmd).splitlines():
+    for line in attach_check_output(name, cmd).splitlines():
         line = line.strip()
-        m = re_inet.match(line)
-        if not m: continue
-        i = m.group(1).split('/')
-        if i[0] in ('127.0.0.1',): continue
-        yield i[0], int(i[1])
+        for r in re_inets:
+            m = r.match(line)
+            if not m: continue
+            i = m.group(1).split('/')
+            if i[0] in ('127.0.0.1', '::1'): continue
+            yield i[0], int(i[1])

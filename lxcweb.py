@@ -36,7 +36,6 @@ class ListJson(object):
             info = lxc.info(name)
             if info['state'] == 'RUNNING':
                 info.update(lxc.cgroupinfo(name))
-                info['ipaddr'] = list(lxc.ipaddr(name))
             infos[name] = info
         return infos
 
@@ -46,7 +45,11 @@ class InfoJson(object):
         info = lxc.info(name)
         if info['state'] == 'RUNNING':
             info.update(lxc.cgroupinfo(name))
+            info['ipaddr'] = list(lxc.ipaddr(name))
         info['diskusage'] = lxc.df(name, True) / 1024
+        try:
+            info['comment'] = lxc.read_comment(name)
+        except IOError: pass
         return info
 
 class PsJson(object):
@@ -71,7 +74,7 @@ class FstabJson(object):
 class Clone(object):
     def GET(self, origin, name):
         form = web.input()
-        fast = form.get('mode').lower() == 'fast'
+        fast = form.get('mode', '').lower() == 'fast'
         if name in list(lxc.ls()):
             httperr('%s exist' % name)
         if origin not in list(lxc.ls()):
@@ -126,6 +129,19 @@ class Reboot(object):
     def GET(self, name):
         state_check(name, 'RUNNING')
         lxc.shutdown(name, reboot=True)
+        return web.seeother('/')
+
+class Freeze(object):
+    def GET(self, name):
+        state_check(name, 'RUNNING')
+        lxc.freeze(name)
+        return web.seeother('/')
+
+# freeze?
+class Unfreeze(object):
+    def GET(self, name):
+        state_check(name, 'RUNNING')
+        lxc.unfreeze(name)
         return web.seeother('/')
 
 # runtime actions
