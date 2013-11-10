@@ -55,8 +55,8 @@ do_start()
 	start-stop-daemon --start --quiet --pidfile $PIDFILE --startas $DAEMON \
 		--name $NAME --test > /dev/null \
 		|| return 1
-	start-stop-daemon --start --quiet --pidfile $PIDFILE --startas $DAEMON -b -m \
-		--name $NAME -- $DAEMON_ARGS \
+	start-stop-daemon -S -q -p $PIDFILE --startas $DAEMON -b -m --no-close \
+		--name $NAME -- $DAEMON_ARGS >> $LOGFILE 2>&1 \
 		|| return 2
 
 	# Add code here, if necessary, that waits for the process to be ready
