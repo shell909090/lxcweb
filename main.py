@@ -7,23 +7,7 @@
 '''
 import os, sys, web, base64, getopt, logging, ConfigParser
 from os import path
-
-def initlog(lv, logfile=None):
-    rootlog = logging.getLogger()
-    if logfile: handler = logging.FileHandler(logfile)
-    else: handler = logging.StreamHandler()
-    handler.setFormatter(
-        logging.Formatter(
-            '%(asctime)s,%(msecs)03d %(name)s[%(levelname)s]: %(message)s',
-            '%H:%M:%S'))
-    rootlog.addHandler(handler)
-    if isinstance(lv, basestring): lv = getattr(logging, lv)
-    rootlog.setLevel(lv)
-
-def read_config(cfgpaths):
-    cfg = ConfigParser.RawConfigParser(allow_no_value=True)
-    cfg.read(cfgpaths)
-    return dict(cfg.items('main')), dict(cfg.items('users'))
+import utils
 
 logger = logging.getLogger('main')
 DEBUG = not path.isfile('RELEASE')
@@ -89,27 +73,27 @@ def auth_proc(handler):
     return
 
 def main():
-    maincfg, web.config.users = read_config([
-        '/etc/lxcweb/lxcweb.conf', 'lxcweb.conf'])
-    initlog(maincfg.get('logging', 'INFO'))
-    if web.config.rootdir: os.chdir(web.config.rootdir)
-
-    optlist, args = getopt.getopt(sys.argv[1:], 'dhp:')
+    optlist, args = getopt.getopt(sys.argv[1:], 'c:hp:')
     optdict = dict(optlist)
     if '-h' in optdict:
         print main.__doc__
         return
+    
+    if web.config.rootdir: os.chdir(web.config.rootdir)
+    cfg = utils.getcfg(optdict.get('-c', [
+        '/etc/lxcweb/lxcweb.conf', 'lxcweb.conf']))
+    web.config.users = dict(cfg.items('users'))
+
+    utils.initlog(cfg.get('log', 'loglevel'), cfg.get('log', 'logfile'))
 
     kw = {}
-    port = int(optdict.get('-p') or maincfg.get('port') or 9981)
-    if '-d' not in optdict:
-        keyfile=maincfg.get('serverkey', '/etc/lxcweb/server.key')
-        certfile=maincfg.get('servercrt', '/etc/lxcweb/server.crt')
+    port = int(optdict.get('-p') or cfg.getint('main', 'port'))
+    if cfg.has_section('ssl'):
+        keyfile = cfg.get('ssl', 'key')
+        certfile = cfg.get('ssl', 'cert')
         if path.exists(keyfile) and path.exists(certfile):
             kw = {'keyfile': keyfile, 'certfile': certfile}
         app.add_processor(auth_proc)
-    else:
-        port = int(optdict.get('-p') or 8080)
         
     from gevent.pywsgi import WSGIServer
     print 'service port :%d' % port
