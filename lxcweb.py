@@ -74,12 +74,11 @@ class FstabJson(object):
 class Clone(object):
     def GET(self, origin, name):
         form = web.input()
-        fast = form.get('mode', '').lower() == 'fast'
         if name in list(lxc.ls()):
             httperr('%s exist' % name)
         if origin not in list(lxc.ls()):
             httperr('%s not exist' % origin)
-        lxc.clone(origin, name, fast)
+        lxc.clone(origin, name)
         if form.get('run'): lxc.start(name)
         return web.seeother('/')
 
