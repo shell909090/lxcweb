@@ -88,16 +88,6 @@ def container_fstab(name):
             else: logging.warning('container %s rule not in rootfs: %s' % (name, str(r)))
     return rslt
 
-def aufs_stack(fstab):
-    i = fstab[0]
-    if i[1].strip('/') or i[2] != 'aufs': return
-    for o in i[3].split(','):
-        if not o.startswith('br='): continue
-        for p in o[3:].split(':'):
-            if '=' in p:
-                yield p.split('=', 1)
-            else: p, 'rw'
-
 def read_comment(name):
     with open(container_path(name, 'comment'), 'r') as fi:
         return fi.read()
@@ -108,25 +98,14 @@ def set_comment(name):
 
 # image methods
 
-def clone(origin, name, fast=False):
-    if fast: cmd = ['./lxc-clone-aufs', '-o', origin, '-n', name]
-    else: cmd = ['lxc-clone', '-o', origin, '-n', name]
-    return check_call(cmd)
+def clone(origin, name):
+    return check_call(['lxc-clone', '-o', origin, '-n', name])
 
 def create(template, name):
     return check_call(['lxc-create', '-t', template, '-n', name])
 
 def destroy(name):
     return check_call(['lxc-destroy', '-n', name])
-
-def merge(name):
-    cfg = container_config(name)
-    rootfs = cfg['lxc.rootfs'][-1]
-    fstab = container_fstab(name)
-    aufs = list(aufs_stack(fstab))
-    for i in aufs: check_call(['rsync', '-Hax', i[0], rootfs])
-    # TODO: remove aufs in fstab
-    # TODO: remove rw?
 
 # info methods
 

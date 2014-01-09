@@ -81,15 +81,13 @@ function each_vm(name, item){
 	newtr += '<a href="/shutdown/'+name+'"><img class="tip" src="/static/media-playback-stop-3.png" alt="shutdown"/></a>';
 	newtr += '<a class="sure" href="/stop/'+name+'"><img class="tip" src="/static/application-exit-5.png" alt="stop"/></a>';
 	newtr += '<a class="sure" href="/reboot/'+name+'"><img class="tip" src="/static/system-reboot-2.png" alt="reboot"/></a>';
-	newtr += '<a class="clone" mode="fast" href=""><img class="tip" src="/static/db_add.png" alt="fast clone"/></a>';
+	newtr += '<a class="clone" href=""><img class="tip" src="/static/db_add.png" alt="clone"/></a>';
 	newtr += '<a class="sure" href="/destroy/'+name+'"><img class="tip" src="/static/edit-delete-9.png" alt="destroy"/></a>';
 	newtr += '<a class="sure" href="/freeze/'+name+'"><img class="tip" src="/static/media-playback-pause-3.png" alt="freeze"/></a>';
 	newtr += '<a class="run" href="'+name+'"><img class="tip" src="/static/system-run-5.png" alt="run"/></a>';
     } else if (item['state'] == "STOPPED") {
 	newtr += '<a href="/start/'+name+'"><img class="tip" src="/static/media-playback-start-3.png" alt="start"/></a>';
-	newtr += '<a class="clone" href=""><img class="tip" src="/static/db_add-2.png" alt="clone"/></a>';
-	newtr += '<a href="/merge/'+name+'"><img class="tip" src="/static/db_update.png" alt="merge"/></a>';
-	newtr += '<a class="clone" mode="fast" href=""><img class="tip" src="/static/db_add.png" alt="fast clone"/></a>';
+	newtr += '<a class="clone" href=""><img class="tip" src="/static/db_add.png" alt="clone"/></a>';
 	newtr += '<a class="sure" href="/destroy/'+name+'"><img class="tip" src="/static/edit-delete-9.png" alt="destroy"/></a>';
     }
     newtr += "</td></tr>";
@@ -151,10 +149,7 @@ function refresh_main(){
 		    return false;
 		}
 		origname = $(this).parents('tr').attr('name');
-		url = '/clone/'+origname+'/'+name;
-		if ($(this).attr('mode') === 'fast') {
-		    url += '?mode=fast&run=1';
-		}
+		url = '/clone/'+origname+'/'+name+'?run=1';
 		$(this).attr('href', url);
 		return true;
 	    });

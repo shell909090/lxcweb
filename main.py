@@ -61,7 +61,6 @@ urls = (
     '/clone/(.*)/(.*)', lxcweb.Clone,
     '/create/(.*)', lxcweb.Create,
     '/destroy/(.*)', lxcweb.Destroy,
-    '/merge/(.*)', lxcweb.Merge,
 
     # container actions
     '/start/(.*)', lxcweb.Start,

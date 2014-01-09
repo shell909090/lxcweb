@@ -99,12 +99,6 @@ class Destroy(object):
         lxc.destroy(name)
         return web.seeother('/')
 
-class Merge(object):
-    def GET(self, name):
-        state_check(name, 'STOPPED')
-        lxc.merge(name)
-        return web.seeother('/')
-
 # container actions
 
 class Start(object):
