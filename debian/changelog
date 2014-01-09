@@ -1,3 +1,9 @@
+lxcweb (0.9) unstable; urgency=medium
+
+  * remove aufs, use btrfs.
+
+ -- Shell.Xu <shell909090@gmail.com>  Thu, 09 Jan 2014 14:26:01 +0800
+
 lxcweb (0.8.2) unstable; urgency=low
 
   * no sudo with root.

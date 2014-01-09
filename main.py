@@ -7,7 +7,7 @@
 '''
 import os, sys, web, base64, getopt, logging, ConfigParser
 from os import path
-import utils
+import utils, lxc
 
 logger = logging.getLogger('main')
 DEBUG = not path.isfile('RELEASE')
@@ -83,6 +83,11 @@ def main():
     cfg = utils.getcfg(optdict.get('-c', [
         '/etc/lxcweb/lxcweb.conf', 'lxcweb.conf']))
     web.config.users = dict(cfg.items('users'))
+
+    if cfg.has_section('lxc'):
+        lxc.global_configfile = cfg.get('lxc', 'config')
+        lxc.default_lxcpath = cfg.get('lxc', 'lxcpath')
+        lxc.sudoflag = cfg.getboolean('lxc', 'sudo')
 
     utils.initlog(cfg.get('log', 'loglevel'), cfg.get('log', 'logfile'))
 
