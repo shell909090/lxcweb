@@ -4,7 +4,7 @@
 @date: 2013-10-23
 @author: shell.xu
 '''
-import re, os, sys, logging
+import re, os, sys, logging, cStringIO
 import subprocess
 from os import path
 
@@ -32,18 +32,20 @@ def attach_check_output(name, cmd):
 
 # config methods
 
-def read_config(filepath, spliter='='):
+def read_config_stream(stream, spliter='='):
     cfg = {}
-    with open(filepath, 'r') as fi:
-        for line in fi:
-            if line.startswith('#'): continue
-            line = line.strip()
-            if not line: continue
-            v = line.split(spliter, 1)
-            k, v = str(v[0]).strip(), str(v[1]).strip()
-            if k not in cfg: cfg[k] = [v,]
-            else: cfg[k].append(v)
+    for line in stream:
+        if line.startswith('#'): continue
+        line = line.strip()
+        if not line: continue
+        v = line.split(spliter, 1)
+        k, v = str(v[0]).strip(), str(v[1]).strip()
+        cfg.setdefault(k, []).append(v)
     return cfg
+
+def read_config(filepath, spliter='='):
+    with open(filepath, 'r') as fi:
+        return read_config_stream(fi, spliter)
 
 def sub_config(cfg, prefix):
     return dict((k[len(prefix):].lstrip('.'), v) for k, v in cfg.iteritems()
@@ -60,9 +62,8 @@ def container_path(name, fn=None):
     cfg = global_config()
     if not path.isdir(path.join(cfg['lxcpath'][-1], name)):
         raise Exception('invaild container %s' % name)
-    if fn:
-        return path.join(cfg['lxcpath'][-1], name, fn)
-    else: return path.join(cfg['lxcpath'][-1], name)
+    if fn: return path.join(cfg['lxcpath'][-1], name, fn)
+    return path.join(cfg['lxcpath'][-1], name)
 
 def container_config(name):
     return read_config(container_path(name, 'config'))
@@ -147,13 +148,38 @@ def ps(name):
         i.extend(i.pop(10).split(' ', 1))
         yield i[1:12]
 
-def df(name, all=False):
-    if all: p = container_path(name)
-    else:
-        cfg = container_config(name)
-        p = cfg['lxc.rootfs'][-1]
+def df(name):
+    cfg = container_config(name)
+    p = cfg['lxc.rootfs'][-1]
+    if isbtrfs(p): return btrfs_df(p) / 1024
     output = check_output(['du', '-sk', p])
     return int(output.split()[0].strip())
+
+def isbtrfs(rootfs):
+    try:
+        check_output(['btrfs', 'sub', 'list', rootfs])
+        return True
+    except subprocess.CalledProcessError:
+        return False
+
+def btrfs_info(rootfs):
+    buf = cStringIO.StringIO(check_output(['btrfs', 'sub', 'show', rootfs]))
+    buf.readline()
+    return read_config_stream(buf, spliter=':')
+
+def btrfs_qgroup(rootfs):
+    buf = cStringIO.StringIO(check_output(['btrfs', 'qgroup', 'show', rootfs]))
+    for line in buf:
+        line = line.strip()
+        if not line: continue
+        v = line.split()
+        yield v[0].split('/', 1)[1], int(v[1]), int(v[2])
+
+def btrfs_df(rootfs):
+    id = btrfs_info(rootfs)['Object ID'][0]
+    for k, v1, v2 in btrfs_qgroup(rootfs):
+        if k == id: return v2
+    raise Exception('object id not exists in qgroup output')
 
 # container methods
 

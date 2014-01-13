@@ -46,7 +46,7 @@ class InfoJson(object):
         if info['state'] == 'RUNNING':
             info.update(lxc.cgroupinfo(name))
             info['ipaddr'] = list(lxc.ipaddr(name))
-        info['diskusage'] = lxc.df(name, True) / 1024
+        info['diskusage'] = lxc.df(name) / 1024
         try:
             info['comment'] = lxc.read_comment(name)
         except IOError: pass
