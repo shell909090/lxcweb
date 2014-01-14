@@ -10,7 +10,7 @@
     <link rel="stylesheet" type="text/css" href="/static/css/style.css" />
   </head>
   <body>
-  	<div class="navbar navbar-fixed-top">
+    <div class="navbar navbar-fixed-top">
       <div class="navbar-inner">
         <div class="container">
           <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
@@ -29,66 +29,24 @@
       </div>
     </div>
     <div class="container">
-	    <table>
-	      <tr>
-					<td>
-			  		<table id="config">
-			    		<thead>
-			      		<tr><td>name</td><td>value</td></tr>
-			    		</thead>
-			    		<tbody></tbody>
-			  		</table>
-					</td>
-					<td>
-		  			<table id="aufs">
-					    <thead>
-					      <tr><td>attr</td><td>path</td></tr>
-					    </thead>
-					    <tbody></tbody>
-					  </table>
-					  <table id="fstab">
-					    <thead>
-					      <tr>
-									<td>source</td><td>target</td><td>filesystem</td><td>options</td>
-					      </tr>
-					    </thead>
-					    <tbody></tbody>
-					  </table>
-					</td>
-	      </tr>
+      <table>
+	<tr>
+	  <td>
+	    <table id="config">
+	      <thead>
+		<tr><td>name</td><td>value</td></tr>
+	      </thead>
+	      <tbody></tbody>
 	    </table>
-  	</div>
+	  </td>
+	</tr>
+      </table>
+    </div>
     <script type="text/javascript" src="/static/js/jquery-1.10.2.min.js" charset="utf-8"></script>
     <script>
     $(document).ready(function(){
 	p = $(location).attr('href').split('/');
 	var name = p[p.length - 1];
-	$.ajax({
-	    url: '/fstab/' + name + '.json',
-	    cache: false,
-	    dataType: "json",
-	    success: function(data){
-		if (data['aufs']){
-		    $.each(data['aufs'], function(n, v){
-			newtr = '<tr>';
-			newtr += '<td>' + v[1] + '</td>';
-			newtr += '<td>' + v[0] + '</td>';
-			newtr += '</tr>';
-			$("#aufs").append(newtr);
-		    });
-		}
-
-		$.each(data['fstab'], function(n, v){
-		    newtr = '<tr>';
-		    newtr += '<td>' + v[0] + '</td>';
-		    newtr += '<td>' + v[1] + '</td>';
-		    newtr += '<td>' + v[2] + '</td>';
-		    newtr += '<td>' + v[3] + '</td>';
-		    newtr += '</tr>';
-		    $("#fstab").append(newtr);
-		});
-	    },
-	});
 
 	$.ajax({
 	    url: '/config/' + name + '.json',

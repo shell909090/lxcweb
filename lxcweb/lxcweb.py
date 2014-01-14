@@ -63,12 +63,6 @@ class ConfigJson(object):
     def GET(self, name):
         return lxc.container_config(name)
 
-class FstabJson(object):
-    @jsondec
-    def GET(self, name):
-        fstab = lxc.container_fstab(name)
-        return {'fstab': fstab, 'aufs': list(lxc.aufs_stack(fstab))}
-
 # image actions
 
 class Clone(object):
