@@ -98,6 +98,10 @@ class Destroy(object):
         lxc.destroy(name)
         return web.seeother('/')
 
+class Export(object):
+    def GET(self, name):
+        pass
+
 # container actions
 
 class Start(object):
@@ -130,7 +134,6 @@ class Freeze(object):
         lxc.freeze(name)
         return web.seeother('/')
 
-# freeze?
 class Unfreeze(object):
     def GET(self, name):
         state_check(name, 'RUNNING')

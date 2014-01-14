@@ -173,6 +173,9 @@ function refresh_main(){
 		$('#action_tip').text('');
 	    });
 
+	    $('#info tbody').html('');
+	    $('#info tbody').removeAttr('name');
+	    $('#info').hide();
 	    $('.infotip').click(function(){
 		$('#info tbody').html('');
 	    	$('#info').hide();
@@ -181,6 +184,7 @@ function refresh_main(){
 		    refresh_info(name);
 		    $('#info').show();
 		}
+		$('#info tbody').removeAttr('name');
 	    });
 	},
     });
