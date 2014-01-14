@@ -4,9 +4,11 @@
 @date: 2013-10-24
 @author: shell.xu
 '''
-import os, sys, json, urlparse
+import os, sys, json, urlparse, subprocess
 import web
 import lxc
+
+CHUNKSIZE = 8192
 
 def httperr(msg):
     raise web.InternalError(json.dumps({'msg': msg}))
@@ -94,6 +96,20 @@ class Destroy(object):
 
 class Export(object):
     def GET(self, name):
+        cfg = lxc.container_config(name)
+        rootfs = cfg['lxc.rootfs'][-1]
+        p = subprocess.Popen(['sudo', 'tar', 'cz', rootfs], stdout=subprocess.PIPE)
+        web.header("Content-Type", "application/octet-stream")
+        web.header("Content-Disposition",
+                   "attachment; filename=%s.tar.gz" % name)
+        d = p.stdout.read(CHUNKSIZE)
+        while d:
+            yield d
+            d = p.stdout.read(CHUNKSIZE)
+
+# TODO:
+class Import(object):
+    def POST(self, name):
         pass
 
 # container actions

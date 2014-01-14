@@ -89,6 +89,7 @@ function each_vm(name, item){
 	newtr += '<a href="/start/'+name+'"><img class="tip" src="/static/media-playback-start-3.png" alt="start"/></a>';
 	newtr += '<a class="clone" href=""><img class="tip" src="/static/db_add.png" alt="clone"/></a>';
 	newtr += '<a class="sure" href="/destroy/'+name+'"><img class="tip" src="/static/edit-delete-9.png" alt="destroy"/></a>';
+	newtr += '<a href="/export/'+name+'"><img class="tip" src="/static/edit-delete-9.png" alt="export"/></a>';
     }
     newtr += "</td></tr>";
     $("#vmlist tbody").append(newtr);

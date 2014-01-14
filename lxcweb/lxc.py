@@ -68,27 +68,6 @@ def container_path(name, fn=None):
 def container_config(name):
     return read_config(container_path(name, 'config'))
 
-def read_fstab(filepath):
-    rslt = []
-    with open(filepath, 'r') as fi:
-        for line in fi:
-            rslt.append(line.split()[:4])
-    return rslt
-
-def container_fstab(name):
-    cfg, rslt = container_config(name), []
-    rootfs = cfg['lxc.rootfs'][-1]
-    for line in cfg.get('lxc.mount.entry', []):
-        rslt.append(line.split()[:4])
-    if 'lxc.mount' in cfg:
-        for r in read_fstab(cfg['lxc.mount'][-1]):
-            if not r: continue
-            if r[1].startswith(rootfs):
-                r[1] = r[1][len(rootfs):]
-                rslt.append(r)
-            else: logging.warning('container %s rule not in rootfs: %s' % (name, str(r)))
-    return rslt
-
 def read_comment(name):
     with open(container_path(name, 'comment'), 'r') as fi:
         return fi.read()

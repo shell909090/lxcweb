@@ -72,13 +72,14 @@ def main():
         '/ps/(.*).json', lxcweb.PsJson,
         '/ps/.*', serve_file(path.join(static_path, 'ps.html')),
         '/config/(.*).json', lxcweb.ConfigJson,
-        '/fstab/(.*).json', lxcweb.FstabJson,
         '/config/.*', serve_file(path.join(static_path, 'config.html')),
 
         # image actions
         '/clone/(.*)/(.*)', lxcweb.Clone,
         '/create/(.*)', lxcweb.Create,
         '/destroy/(.*)', lxcweb.Destroy,
+        '/export/(.*)', lxcweb.Export,
+        '/import/(.*)', lxcweb.Import,
 
         # container actions
         '/start/(.*)', lxcweb.Start,
