@@ -12,6 +12,8 @@ global_configfile = '/etc/lxc/lxc.conf'
 default_lxcpath = '/var/lib/lxc'
 sudoflag = os.getuid() != 0
 
+# run methods
+
 def check_call(cmd):
     if sudoflag: cmd.insert(0, 'sudo')
     return subprocess.check_call(cmd)
@@ -91,7 +93,7 @@ def destroy(name):
 
 def ls():
     output = check_output(['lxc-ls',])
-    return (i for i in output.split() if i != '.')
+    return [i for i in output.split() if i != '.']
 
 def info(name):
     output = check_output(['lxc-info', '-n', name])

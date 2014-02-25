@@ -4,7 +4,7 @@
 @date: 2013-10-24
 @author: shell.xu
 '''
-import os, sys, json, urlparse, subprocess
+import re, os, sys, json, urlparse, subprocess
 import web
 import lxc
 
@@ -14,7 +14,7 @@ def httperr(msg):
     raise web.InternalError(json.dumps({'msg': msg}))
 
 def state_check(name, st, exist=True):
-    if exist and name not in list(lxc.ls()):
+    if exist and name not in lxc.ls():
         httperr('%s not exist' % name)
     info = lxc.info(name)
     if st and info['state'] != st:
@@ -27,6 +27,10 @@ def jsondec(func):
         web.header("Content-Type", "application/json")
         return json.dumps(obj)
     return inner
+
+re_name = re.compile('[a-zA-Z0-9_]{1,20}')
+def name_validation(name):
+    return re.match(name) is not None
 
 # info actions
 
@@ -44,6 +48,8 @@ class ListJson(object):
 class InfoJson(object):
     @jsondec
     def GET(self, name):
+        if not lxc.name_validation(name):
+            return 'invalid name'
         info = lxc.info(name)
         if info['state'] == 'RUNNING':
             info.update(lxc.cgroupinfo(name))
@@ -57,22 +63,28 @@ class InfoJson(object):
 class PsJson(object):
     @jsondec
     def GET(self, name):
+        if not lxc.name_validation(name):
+            return 'invalid name'
         info = state_check(name, 'RUNNING')
         return list(lxc.ps(name))
 
 class ConfigJson(object):
     @jsondec
     def GET(self, name):
+        if not lxc.name_validation(name):
+            return 'invalid name'
         return lxc.container_config(name)
 
 # image actions
 
 class Clone(object):
     def GET(self, origin, name):
+        if not lxc.name_validation(name):
+            return 'invalid name'
         form = web.input()
-        if name in list(lxc.ls()):
+        if name in lxc.ls():
             httperr('%s exist' % name)
-        if origin not in list(lxc.ls()):
+        if origin not in lxc.ls():
             httperr('%s not exist' % origin)
         lxc.clone(origin, name)
         if form.get('run'): lxc.start(name)
@@ -80,15 +92,19 @@ class Clone(object):
 
 class Create(object):
     def GET(self, name):
+        if not lxc.name_validation(name):
+            return 'invalid name'
         form = web.input()
         template = form.get('template') or 'debian'
-        if name in list(lxc.ls()):
+        if name in lxc.ls():
             httperr('%s exist' % name)
         lxc.Create(template, name)
         return web.seeother('/')
 
 class Destroy(object):
     def GET(self, name):
+        if not lxc.name_validation(name):
+            return 'invalid name'
         info = state_check(name, None)
         if info['state'] == 'RUNNING': lxc.stop(name)
         lxc.destroy(name)
@@ -96,9 +112,13 @@ class Destroy(object):
 
 class Export(object):
     def GET(self, name):
+        if not lxc.name_validation(name):
+            yield 'invalid name'
+            return
         cfg = lxc.container_config(name)
         rootfs = cfg['lxc.rootfs'][-1]
-        p = subprocess.Popen(['sudo', 'tar', 'cz', rootfs], stdout=subprocess.PIPE)
+        p = subprocess.Popen(['sudo', 'tar', 'cz', rootfs],
+                             stdout=subprocess.PIPE)
         web.header("Content-Type", "application/octet-stream")
         web.header("Content-Disposition",
                    "attachment; filename=%s.tar.gz" % name)
@@ -109,43 +129,67 @@ class Export(object):
 
 # TODO:
 class Import(object):
+    ''' WARN: this operator is dangerous '''
     def POST(self, name):
-        pass
+        if not lxc.name_validation(name):
+            return 'invalid name'
+        form = web.input(file={})
+        cfg = lxc.container_config(name)
+        rootfs = cfg['lxc.rootfs'][-1]
+        p = subprocess.Popen(['sudo', 'tar', 'cz', rootfs],
+                             stdin=subprocess.PIPE)
+        d = form['file'].file.read(CHUNKSIZE)
+        while d:
+            p.stdin.write(d)
+            d = form['file'].file.read(CHUNKSIZE)
+        return web.seeother('/')
 
 # container actions
 
 class Start(object):
     def GET(self, name):
+        if not lxc.name_validation(name):
+            return 'invalid name'
         state_check(name, 'STOPPED')
         lxc.start(name)
         return web.seeother('/')
 
 class Stop(object):
     def GET(self, name):
+        if not lxc.name_validation(name):
+            return 'invalid name'
         state_check(name, 'RUNNING')
         lxc.stop(name)
         return web.seeother('/')
 
 class Shutdown(object):
     def GET(self, name):
+        if not lxc.name_validation(name):
+            return 'invalid name'
         state_check(name, 'RUNNING')
         lxc.shutdown(name)
         return web.seeother('/')
 
 class Reboot(object):
     def GET(self, name):
+        if not lxc.name_validation(name):
+            return 'invalid name'
         state_check(name, 'RUNNING')
         lxc.shutdown(name, reboot=True)
         return web.seeother('/')
 
 class Freeze(object):
     def GET(self, name):
+        if not lxc.name_validation(name):
+            return 'invalid name'
         state_check(name, 'RUNNING')
         lxc.freeze(name)
         return web.seeother('/')
 
 class Unfreeze(object):
     def GET(self, name):
+        if not lxc.name_validation(name):
+            return 'invalid name'
         state_check(name, 'RUNNING')
         lxc.unfreeze(name)
         return web.seeother('/')
@@ -154,6 +198,8 @@ class Unfreeze(object):
 
 class Attach(object):
     def POST(self, name):
+        if not lxc.name_validation(name):
+            return 'invalid name'
         cmd = web.data()
         if cmd.startswith('cmd='):
             cmd = urlparse.parse_qs(cmd)['cmd'][0]
